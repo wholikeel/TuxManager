@@ -4,15 +4,13 @@
 namespace Perf
 {
 
-MemoryDetailWidget::MemoryDetailWidget(QWidget *parent)
-    : QWidget(parent)
-    , ui(new Ui::MemoryDetailWidget)
+MemoryDetailWidget::MemoryDetailWidget(QWidget *parent) : QWidget(parent), ui(new Ui::MemoryDetailWidget)
 {
     this->ui->setupUi(this);
 
     // Memory graph: purple / magenta
-    this->ui->graphWidget->setColor(QColor(0xcc, 0x44, 0xcc),
-                                    QColor(0x66, 0x11, 0x66, 130));
+    this->ui->graphWidget->setColor(QColor(0xcc, 0x44, 0xcc), QColor(0x66, 0x11, 0x66, 130));
+    this->ui->graphWidget->setSampleCapacity(HISTORY_SIZE);
     this->ui->graphWidget->setGridColumns(6);
     this->ui->graphWidget->setGridRows(4);
 }

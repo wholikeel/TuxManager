@@ -34,6 +34,8 @@ class GraphWidget : public QWidget
         void setGridColumns(int cols) { this->m_gridCols = cols; update(); }
         /// Number of vertical grid divisions.
         void setGridRows(int rows)    { this->m_gridRows = rows; update(); }
+        /// Number of fixed time slots across the X axis (controls scrolling).
+        void setSampleCapacity(int samples);
 
         QSize sizeHint() const override { return QSize(200, 80); }
         QSize minimumSizeHint() const override { return QSize(60, 30); }
@@ -52,6 +54,8 @@ class GraphWidget : public QWidget
 
         int             m_gridCols  { 5 };
         int             m_gridRows  { 4 };
+        int             m_sampleCapacity { 60 };  ///< Matches PerfDataProvider::HISTORY_SIZE.
+        int             m_historyTick { 0 };      ///< Advances as samples arrive; used for grid phase.
 };
 
 } // namespace Perf

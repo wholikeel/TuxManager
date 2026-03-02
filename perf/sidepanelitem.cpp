@@ -1,4 +1,5 @@
 #include "sidepanelitem.h"
+#include "perfdataprovider.h"
 
 #include <QEnterEvent>
 #include <QPainter>
@@ -21,6 +22,7 @@ SidePanelItem::SidePanelItem(const QString &title, QWidget *parent)
     QVBoxLayout *lay = new QVBoxLayout(this);
     lay->setContentsMargins(6, 22, 6, 4);   // leave room for title text
     lay->setSpacing(0);
+    this->m_graph->setSampleCapacity(HISTORY_SIZE);
     lay->addWidget(this->m_graph);
     this->setLayout(lay);
 }

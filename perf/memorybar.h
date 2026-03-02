@@ -1,6 +1,7 @@
 #ifndef PERF_MEMORYBAR_H
 #define PERF_MEMORYBAR_H
 
+#include <QPoint>
 #include <QWidget>
 
 namespace Perf
@@ -33,8 +34,16 @@ class MemoryBar : public QWidget
 
     protected:
         void paintEvent(QPaintEvent *event) override;
+        bool event(QEvent *event) override;
 
     private:
+        enum class Segment { None, Used, Dirty, Cached, Free };
+
+        void    segmentWidths(int &wUsed, int &wDirty, int &wCached, int &wFree) const;
+        Segment segmentAtPos(const QPoint &pos) const;
+        QString formatKb(qint64 kb) const;
+        QString segmentTooltip(Segment seg) const;
+
         qint64 m_used   { 0 };
         qint64 m_dirty  { 0 };
         qint64 m_cached { 0 };

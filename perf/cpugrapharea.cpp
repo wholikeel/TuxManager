@@ -17,6 +17,7 @@ CpuGraphArea::CpuGraphArea(QWidget *parent)
 {
     // Page 0 — single aggregate graph
     this->m_overallGraph = new GraphWidget(this->m_stack);
+    this->m_overallGraph->setSampleCapacity(HISTORY_SIZE);
     this->m_stack->addWidget(this->m_overallGraph);  // index 0
 
     // Page 1 — per-core grid (populated lazily in ensureCoreGraphs)
@@ -121,6 +122,7 @@ void CpuGraphArea::ensureCoreGraphs(int count)
     for (int i = 0; i < count; ++i)
     {
         GraphWidget *g = new GraphWidget(this->m_perCoreContainer);
+        g->setSampleCapacity(HISTORY_SIZE);
         g->setGridColumns(2);
         g->setGridRows(2);
         g->setToolTip(tr("CPU %1").arg(i));

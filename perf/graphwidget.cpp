@@ -19,6 +19,8 @@ GraphWidget::GraphWidget(QWidget *parent)
 
 void GraphWidget::setHistory(const QVector<double> &data, double maxVal)
 {
+    if (data != this->m_data)
+        ++this->m_historyTick;
     this->m_data   = data;
     this->m_maxVal = (maxVal > 0.0) ? maxVal : 100.0;
     this->update();
@@ -37,6 +39,12 @@ void GraphWidget::setColor(QColor line, QColor fill)
     this->update();
 }
 
+void GraphWidget::setSampleCapacity(int samples)
+{
+    this->m_sampleCapacity = qMax(2, samples);
+    this->update();
+}
+
 void GraphWidget::paintEvent(QPaintEvent * /*event*/)
 {
     QPainter p(this);
@@ -49,36 +57,63 @@ void GraphWidget::paintEvent(QPaintEvent * /*event*/)
     // ── Background ────────────────────────────────────────────────────────────
     p.fillRect(r, QColor(0x0a, 0x0a, 0x0a));
 
+    // Fixed time axis slot geometry.
+    const int sampleCount = qMax(2, this->m_sampleCapacity);
+    const double stepX = static_cast<double>(w) / static_cast<double>(sampleCount - 1);
+
     // ── Grid ──────────────────────────────────────────────────────────────────
     const QColor gridColor(0x28, 0x28, 0x28);
     p.setPen(QPen(gridColor, 1));
 
+    // Denser grid on larger widgets while keeping existing configured minimum.
+    const int targetGridPxX = 80;
+    const int targetGridPxY = 55;
+    const int gridCols = qMax(this->m_gridCols, qMax(1, w / targetGridPxX));
+    const int gridRows = qMax(this->m_gridRows, qMax(1, h / targetGridPxY));
+
     // Horizontal lines
-    for (int i = 1; i < this->m_gridRows; ++i)
+    for (int i = 1; i < gridRows; ++i)
     {
-        const int y = h * i / this->m_gridRows;
+        const int y = h * i / gridRows;
         p.drawLine(0, y, w, y);
     }
-    // Vertical lines
-    for (int i = 1; i < this->m_gridCols; ++i)
+
+    // Vertical lines snap to time slots and phase-shift with sample updates.
+    // This keeps graph points aligned to the same grid columns as data scrolls.
+    const int gridSlotStep = qMax(1, sampleCount / gridCols);
+    const int phase = this->m_historyTick % gridSlotStep;
+    int lastX = -1;
+    for (int slot = 1; slot < sampleCount - 1; ++slot)
     {
-        const int x = w * i / this->m_gridCols;
+        if (((slot + phase) % gridSlotStep) != 0)
+            continue;
+
+        const int x = static_cast<int>(slot * stepX + 0.5);
+        if (x <= 0 || x >= w || x == lastX)
+            continue;
         p.drawLine(x, 0, x, h);
+        lastX = x;
     }
 
     // ── Data ──────────────────────────────────────────────────────────────────
     if (this->m_data.isEmpty())
         return;
 
-    const int   n      = this->m_data.size();
-    const double stepX = static_cast<double>(w) / (n - 1 > 0 ? n - 1 : 1);
+    const int n = this->m_data.size();
+
+    // Keep a fixed-width time axis:
+    // - when history is short, right-align it (empty area on the left)
+    // - once full, new samples push older ones off the left edge
+    const int visibleStart = qMax(0, n - sampleCount);
+    const int visibleCount = n - visibleStart;
+    const int slotOffset = qMax(0, sampleCount - visibleCount);
 
     // Build path — left to right, newest sample on the right
     QPainterPath path;
-    for (int i = 0; i < n; ++i)
+    for (int i = 0; i < visibleCount; ++i)
     {
-        const double val = qBound(0.0, this->m_data.at(i), this->m_maxVal);
-        const double fx  = i * stepX;
+        const double val = qBound(0.0, this->m_data.at(visibleStart + i), this->m_maxVal);
+        const double fx  = (slotOffset + i) * stepX;
         const double fy  = h - (val / this->m_maxVal) * h;
 
         if (i == 0)
@@ -89,8 +124,8 @@ void GraphWidget::paintEvent(QPaintEvent * /*event*/)
 
     // Filled area below the line (total user+kernel)
     QPainterPath fillPath = path;
-    fillPath.lineTo((n - 1) * stepX, h);
-    fillPath.lineTo(0.0, h);
+    fillPath.lineTo((slotOffset + visibleCount - 1) * stepX, h);
+    fillPath.lineTo(slotOffset * stepX, h);
     fillPath.closeSubpath();
 
     p.setPen(Qt::NoPen);
@@ -100,14 +135,15 @@ void GraphWidget::paintEvent(QPaintEvent * /*event*/)
     // Kernel-time overlay (secondary data2) — drawn on top as a darker fill
     if (!this->m_data2.isEmpty())
     {
-        const int n2 = qMin(this->m_data2.size(), n);
-        // Offset so that the rightmost sample of data2 aligns with data
-        const int off = n - n2;
+        const int n2 = this->m_data2.size();
+        const int visibleStart2 = qMax(0, n2 - sampleCount);
+        const int visibleCount2 = n2 - visibleStart2;
+        const int slotOffset2 = qMax(0, sampleCount - visibleCount2);
         QPainterPath kPath;
-        for (int i = 0; i < n2; ++i)
+        for (int i = 0; i < visibleCount2; ++i)
         {
-            const double val = qBound(0.0, this->m_data2.at(i), this->m_maxVal);
-            const double fx  = (off + i) * stepX;
+            const double val = qBound(0.0, this->m_data2.at(visibleStart2 + i), this->m_maxVal);
+            const double fx  = (slotOffset2 + i) * stepX;
             const double fy  = h - (val / this->m_maxVal) * h;
             if (i == 0)
                 kPath.moveTo(fx, fy);
@@ -115,8 +151,8 @@ void GraphWidget::paintEvent(QPaintEvent * /*event*/)
                 kPath.lineTo(fx, fy);
         }
         QPainterPath kFill = kPath;
-        kFill.lineTo((off + n2 - 1) * stepX, h);
-        kFill.lineTo(off * stepX, h);
+        kFill.lineTo((slotOffset2 + visibleCount2 - 1) * stepX, h);
+        kFill.lineTo(slotOffset2 * stepX, h);
         kFill.closeSubpath();
         p.setPen(Qt::NoPen);
         p.setBrush(this->m_fillColor2);
