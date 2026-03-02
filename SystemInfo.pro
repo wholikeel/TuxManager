@@ -27,6 +27,7 @@ SOURCES += \
     perf/sidepanel.cpp \
     perf/cpugrapharea.cpp \
     perf/cpudetailwidget.cpp \
+    perf/diskdetailwidget.cpp \
     perf/memorybar.cpp \
     perf/memorydetailwidget.cpp
 
@@ -48,6 +49,7 @@ HEADERS += \
     perf/sidepanel.h \
     perf/cpugrapharea.h \
     perf/cpudetailwidget.h \
+    perf/diskdetailwidget.h \
     perf/memorybar.h \
     perf/memorydetailwidget.h
 
@@ -58,6 +60,7 @@ FORMS += \
     userswidget.ui \
     serviceswidget.ui \
     perf/cpudetailwidget.ui \
+    perf/diskdetailwidget.ui \
     perf/memorydetailwidget.ui
 
 # Default rules for deployment.

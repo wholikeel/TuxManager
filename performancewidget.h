@@ -5,8 +5,10 @@
 #include "perf/sidepanel.h"
 #include "perf/cpudetailwidget.h"
 #include "perf/memorydetailwidget.h"
+#include "perf/diskdetailwidget.h"
 
 #include <QStackedWidget>
+#include <QVector>
 #include <QWidget>
 
 QT_BEGIN_NAMESPACE
@@ -32,11 +34,15 @@ class PerformanceWidget : public QWidget
         QStackedWidget             *m_stack;
         Perf::CpuDetailWidget      *m_cpuDetail;
         Perf::MemoryDetailWidget   *m_memDetail;
+        QVector<Perf::SidePanelItem *>   m_diskItems;
+        QVector<Perf::DiskDetailWidget *> m_diskDetails;
+        QVector<QString>                 m_diskNames;
 
         enum PanelIndex { PanelCpu = 0, PanelMemory = 1 };
 
         void setupLayout();
         void setupSidePanel();
+        void setupDiskPanels();
 };
 
 #endif // PERFORMANCEWIDGET_H

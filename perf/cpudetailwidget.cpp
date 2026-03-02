@@ -47,10 +47,6 @@ void CpuDetailWidget::setProvider(PerfDataProvider *provider)
         this->ui->modelNameLabel->setText(this->m_provider->cpuModelName());
         this->ui->statLogicalCpusValue->setText(
                 QString::number(this->m_provider->cpuLogicalCount()));
-        const double baseMhz = this->m_provider->cpuBaseMhz();
-        if (baseMhz > 0.0)
-            this->ui->statBaseSpeedValue->setText(
-                    tr("%1 GHz").arg(baseMhz / 1000.0, 0, 'f', 2));
 
         connect(this->m_provider, &PerfDataProvider::updated,
                 this, &CpuDetailWidget::onUpdated);
@@ -110,6 +106,19 @@ void CpuDetailWidget::onUpdated()
 
     // Update the graph area
     this->m_graphArea->updateData(this->m_provider);
+
+    if (this->m_provider->cpuIsVirtualMachine())
+    {
+        const QString vendor = this->m_provider->cpuVmVendor();
+        if (vendor.isEmpty())
+            this->ui->statVmValue->setText(tr("Yes"));
+        else
+            this->ui->statVmValue->setText(tr("Yes (%1)").arg(vendor));
+    }
+    else
+    {
+        this->ui->statVmValue->setText(tr("No"));
+    }
 }
 
 void CpuDetailWidget::onContextMenuRequested(const QPoint &globalPos)
@@ -159,4 +168,3 @@ void CpuDetailWidget::onContextMenuRequested(const QPoint &globalPos)
 }
 
 } // namespace Perf
-

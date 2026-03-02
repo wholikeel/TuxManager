@@ -5,6 +5,9 @@
 #include <QTimer>
 #include <QVector>
 #include <QString>
+#include <QElapsedTimer>
+#include <QSet>
+#include <QHash>
 
 namespace Perf
 {
@@ -41,6 +44,8 @@ class PerfDataProvider : public QObject
         double cpuBaseMhz()           const { return this->m_cpuBaseMhz;   }
         double cpuCurrentMhz()        const { return this->m_cpuCurrentMhz; }
         int    cpuLogicalCount()      const { return this->m_cpuLogicalCount; }
+        bool   cpuIsVirtualMachine()  const { return this->m_cpuIsVirtualMachine; }
+        const QString &cpuVmVendor()  const { return this->m_cpuVmVendor; }
 
         // ── Process / thread counts (updated every sample) ────────────────────
         int processCount() const { return this->m_processCount; }
@@ -58,8 +63,21 @@ class PerfDataProvider : public QObject
         qint64 memBuffersKb() const { return this->m_memBuffersKb; }
         /// Dirty pages pending write-back: Dirty + Writeback
         qint64 memDirtyKb()   const { return this->m_memDirtyKb;   }
+        int memDimmSlotsTotal() const { return this->m_memDimmSlotsTotal; }
+        int memDimmSlotsUsed()  const { return this->m_memDimmSlotsUsed;  }
+        int memSpeedMtps()      const { return this->m_memSpeedMtps;      }
         double memFraction()  const;
         const QVector<double> &memHistory() const { return this->m_memHistory; }
+
+        // ── Disks (base block devices backing mounted/swap paths) ────────────
+        int diskCount() const { return this->m_disks.size(); }
+        QString diskName(int i) const;
+        QString diskModel(int i) const;
+        QString diskType(int i) const;
+        double diskActivePercent(int i) const;
+        double diskReadBytesPerSec(int i) const;
+        double diskWriteBytesPerSec(int i) const;
+        const QVector<double> &diskActiveHistory(int i) const;
 
     signals:
         void updated();
@@ -76,6 +94,20 @@ class PerfDataProvider : public QObject
             quint64        prevKernel { 0 };
             QVector<double> history;
             QVector<double> kernelHistory;
+        };
+
+        struct DiskSample
+        {
+            QString        name;          ///< base device name (e.g. sda, nvme0n1)
+            QString        model;         ///< best-effort model string
+            QString        type;          ///< HDD/SSD/Unknown
+            quint64        prevReadSecs  { 0 };
+            quint64        prevWriteSecs { 0 };
+            quint64        prevIoMs      { 0 };
+            double         activePct     { 0.0 };
+            double         readBps       { 0.0 };
+            double         writeBps      { 0.0 };
+            QVector<double> activeHistory;
         };
 
         QTimer *m_timer;
@@ -95,6 +127,8 @@ class PerfDataProvider : public QObject
         double   m_cpuBaseMhz       { 0.0 };
         double   m_cpuCurrentMhz    { 0.0 };
         int      m_cpuLogicalCount  { 0 };
+        bool     m_cpuIsVirtualMachine { false };
+        QString  m_cpuVmVendor;
 
         // Process/thread counts
         int      m_processCount { 0 };
@@ -108,13 +142,30 @@ class PerfDataProvider : public QObject
         qint64           m_memCachedKb  { 0 };
         qint64           m_memBuffersKb { 0 };
         qint64           m_memDirtyKb   { 0 };
+        int              m_memDimmSlotsTotal { 0 };
+        int              m_memDimmSlotsUsed  { 0 };
+        int              m_memSpeedMtps      { 0 };
         QVector<double>  m_memHistory;
+
+        // Disk state
+        QVector<DiskSample> m_disks;
+        QElapsedTimer       m_diskTimer;
+        qint64              m_prevDiskSampleMs { 0 };
 
         bool sampleCpu();
         bool sampleMemory();
+        bool sampleDisks();
         void sampleProcessStats();
         void readCpuMetadata();
         void readCurrentFreq();
+        void readHardwareMetadata();
+        void refreshDisks(const QSet<QString> &measurableDevices);
+
+        static QSet<QString> resolveBaseBlockDevices(const QString &devName);
+        static bool shouldIgnoreBlockDevice(const QString &baseName);
+        static QString readSysTextFile(const QString &path);
+        static quint16 readLe16(const QByteArray &raw, int off);
+        static quint32 readLe32(const QByteArray &raw, int off);
 
         static void   appendHistory(QVector<double> &vec, double val);
         static quint64 parseCpuLine(const QList<QByteArray> &parts,

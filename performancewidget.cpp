@@ -30,6 +30,8 @@ PerformanceWidget::PerformanceWidget(QWidget *parent)
     connect(this->m_provider, &Perf::PerfDataProvider::updated,
             this, &PerformanceWidget::onProviderUpdated);
 
+    this->onProviderUpdated();
+
     LOG_DEBUG("PerformanceWidget initialised");
 }
 
@@ -70,9 +72,32 @@ void PerformanceWidget::setupSidePanel()
     this->m_sidePanel->addItem(memItem);
     this->m_stack->addWidget(this->m_memDetail);
 
+    this->setupDiskPanels();
+
     // Side-panel selection drives the stacked widget page
     connect(this->m_sidePanel, &Perf::SidePanel::currentChanged,
             this->m_stack, &QStackedWidget::setCurrentIndex);
+}
+
+void PerformanceWidget::setupDiskPanels()
+{
+    const int count = this->m_provider->diskCount();
+    for (int i = 0; i < count; ++i)
+    {
+        const QString devName = this->m_provider->diskName(i);
+        this->m_diskNames.append(devName);
+
+        auto *item = new Perf::SidePanelItem(tr("Disk (%1)").arg(devName), this);
+        item->setGraphColor(QColor(0x66, 0xbb, 0x44), QColor(0x33, 0x66, 0x22, 120));
+        this->m_sidePanel->addItem(item);
+        this->m_diskItems.append(item);
+
+        auto *detail = new Perf::DiskDetailWidget(this);
+        detail->setProvider(this->m_provider);
+        detail->setDiskIndex(i);
+        this->m_stack->addWidget(detail);
+        this->m_diskDetails.append(detail);
+    }
 }
 
 // ── Slots ─────────────────────────────────────────────────────────────────────
@@ -99,5 +124,18 @@ void PerformanceWidget::onProviderUpdated()
                            .arg(pct);
     if (auto *item = this->m_sidePanel->itemAt(PanelMemory))
         item->update(memSub, this->m_provider->memHistory());
-}
 
+    for (int i = 0; i < this->m_diskItems.size(); ++i)
+    {
+        if (i >= this->m_provider->diskCount())
+            break;
+        auto *item = this->m_diskItems.at(i);
+        if (!item)
+            continue;
+
+        const QString diskSub = tr("%1 %2")
+                                .arg(this->m_provider->diskType(i))
+                                .arg(QString::number(this->m_provider->diskActivePercent(i), 'f', 0) + "%");
+        item->update(diskSub, this->m_provider->diskActiveHistory(i));
+    }
+}

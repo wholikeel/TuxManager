@@ -2,8 +2,13 @@
 
 #include "logger.h"
 
+#include <algorithm>
 #include <QDir>
+#include <QFileInfo>
 #include <QFile>
+#include <QHash>
+#include <QRegularExpression>
+#include <QStringList>
 #include <unistd.h>
 
 namespace Perf
@@ -18,10 +23,12 @@ PerfDataProvider::PerfDataProvider(QObject *parent)
     connect(this->m_timer, &QTimer::timeout, this, &PerfDataProvider::onTimer);
 
     this->readCpuMetadata();
+    this->readHardwareMetadata();
 
     // Prime CPU baseline — first real sample will have a valid delta
     this->sampleCpu();
     this->sampleMemory();
+    this->sampleDisks();
     this->sampleProcessStats();
 
     this->m_timer->start(1000);
@@ -64,12 +71,63 @@ const QVector<double> &PerfDataProvider::coreKernelHistory(int i) const
     return this->m_cores.at(i).kernelHistory;
 }
 
+QString PerfDataProvider::diskName(int i) const
+{
+    if (i < 0 || i >= this->m_disks.size())
+        return {};
+    return this->m_disks.at(i).name;
+}
+
+QString PerfDataProvider::diskModel(int i) const
+{
+    if (i < 0 || i >= this->m_disks.size())
+        return {};
+    return this->m_disks.at(i).model;
+}
+
+QString PerfDataProvider::diskType(int i) const
+{
+    if (i < 0 || i >= this->m_disks.size())
+        return {};
+    return this->m_disks.at(i).type;
+}
+
+double PerfDataProvider::diskActivePercent(int i) const
+{
+    if (i < 0 || i >= this->m_disks.size())
+        return 0.0;
+    return this->m_disks.at(i).activePct;
+}
+
+double PerfDataProvider::diskReadBytesPerSec(int i) const
+{
+    if (i < 0 || i >= this->m_disks.size())
+        return 0.0;
+    return this->m_disks.at(i).readBps;
+}
+
+double PerfDataProvider::diskWriteBytesPerSec(int i) const
+{
+    if (i < 0 || i >= this->m_disks.size())
+        return 0.0;
+    return this->m_disks.at(i).writeBps;
+}
+
+const QVector<double> &PerfDataProvider::diskActiveHistory(int i) const
+{
+    static const QVector<double> empty;
+    if (i < 0 || i >= this->m_disks.size())
+        return empty;
+    return this->m_disks.at(i).activeHistory;
+}
+
 // ── Private slots ─────────────────────────────────────────────────────────────
 
 void PerfDataProvider::onTimer()
 {
     this->sampleCpu();
     this->sampleMemory();
+    this->sampleDisks();
     this->sampleProcessStats();
     this->readCurrentFreq();
     emit this->updated();
@@ -247,6 +305,268 @@ bool PerfDataProvider::sampleMemory()
     return true;
 }
 
+// ── Disk sampling ─────────────────────────────────────────────────────────────
+
+QString PerfDataProvider::readSysTextFile(const QString &path)
+{
+    QFile f(path);
+    if (!f.open(QIODevice::ReadOnly | QIODevice::Text))
+        return {};
+    const QString out = QString::fromUtf8(f.readAll()).trimmed();
+    f.close();
+    return out;
+}
+
+bool PerfDataProvider::shouldIgnoreBlockDevice(const QString &baseName)
+{
+    return baseName.startsWith("loop")
+           || baseName.startsWith("ram")
+           || baseName.startsWith("zram");
+}
+
+QSet<QString> PerfDataProvider::resolveBaseBlockDevices(const QString &devName)
+{
+    QSet<QString> out;
+    if (devName.isEmpty() || devName == "." || devName == "..")
+        return out;
+
+    const QString sysPath = QString("/sys/class/block/%1").arg(devName);
+    const QFileInfo fi(sysPath);
+    if (!fi.exists())
+        return out;
+
+    // Device-mapper / md devices can have one or more "slaves".
+    // If present, recurse into those and treat them as backing base devices.
+    const QDir slavesDir(sysPath + "/slaves");
+    const QStringList slaves = slavesDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+    if (!slaves.isEmpty())
+    {
+        for (const QString &slave : slaves)
+            out.unite(resolveBaseBlockDevices(slave));
+        return out;
+    }
+
+    // Partitions expose /sys/class/block/<name>/partition.
+    // Walk to parent block device (e.g. sda1 -> sda, nvme0n1p2 -> nvme0n1).
+    if (QFileInfo(sysPath + "/partition").exists())
+    {
+        QString parentName;
+        const QString canonical = QFileInfo(sysPath).canonicalFilePath();
+        if (!canonical.isEmpty())
+        {
+            QDir d(canonical);
+            if (d.cdUp())
+                parentName = d.dirName();
+        }
+
+        if ((parentName.isEmpty() || parentName == "." || parentName == "..") && !devName.isEmpty())
+        {
+            // Fallback when canonical parent lookup fails:
+            // nvme0n1p2 -> nvme0n1, mmcblk0p1 -> mmcblk0, sda1 -> sda
+            static const QRegularExpression partRe("^(.*?)(?:p)?\\d+$");
+            const QRegularExpressionMatch m = partRe.match(devName);
+            if (m.hasMatch())
+                parentName = m.captured(1);
+        }
+
+        if (!parentName.isEmpty() && parentName != "." && parentName != ".." && parentName != devName)
+            return resolveBaseBlockDevices(parentName);
+    }
+
+    out.insert(devName);
+    return out;
+}
+
+void PerfDataProvider::refreshDisks(const QSet<QString> &measurableDevices)
+{
+    QSet<QString> rawDevNames;
+
+    // Mounted filesystems
+    QFile mf("/proc/self/mountinfo");
+    if (mf.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        for (;;)
+        {
+            const QByteArray line = mf.readLine();
+            if (line.isNull())
+                break;
+
+            const QList<QByteArray> parts = line.trimmed().split(' ');
+            const int sepIdx = parts.indexOf("-");
+            if (sepIdx < 0 || sepIdx + 2 >= parts.size())
+                continue;
+
+            const QString source = QString::fromUtf8(parts.at(sepIdx + 2));
+            if (!source.startsWith("/dev/"))
+                continue;
+            rawDevNames.insert(QFileInfo(source).fileName());
+        }
+        mf.close();
+    }
+
+    // Swap devices are in use even when not mounted.
+    QFile sf("/proc/swaps");
+    if (sf.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        bool header = true;
+        for (;;)
+        {
+            const QByteArray line = sf.readLine();
+            if (line.isNull())
+                break;
+            if (header)
+            {
+                header = false;
+                continue;
+            }
+            const QList<QByteArray> parts = line.simplified().split(' ');
+            if (parts.isEmpty())
+                continue;
+            const QString src = QString::fromUtf8(parts.at(0));
+            if (!src.startsWith("/dev/"))
+                continue;
+            rawDevNames.insert(QFileInfo(src).fileName());
+        }
+        sf.close();
+    }
+
+    QSet<QString> baseDevices;
+    for (const QString &raw : rawDevNames)
+    {
+        const QSet<QString> bases = resolveBaseBlockDevices(raw);
+        for (const QString &b : bases)
+        {
+            if (!shouldIgnoreBlockDevice(b) && measurableDevices.contains(b))
+                baseDevices.insert(b);
+        }
+    }
+
+    QStringList names = baseDevices.values();
+    std::sort(names.begin(), names.end());
+
+    // Preserve existing histories/counters for unchanged devices.
+    QHash<QString, DiskSample> oldByName;
+    oldByName.reserve(this->m_disks.size());
+    for (const DiskSample &d : this->m_disks)
+        oldByName.insert(d.name, d);
+
+    QVector<DiskSample> rebuilt;
+    rebuilt.reserve(names.size());
+    for (const QString &name : names)
+    {
+        if (oldByName.contains(name))
+        {
+            rebuilt.append(oldByName.value(name));
+            continue;
+        }
+
+        DiskSample d;
+        d.name = name;
+
+        const QString model = readSysTextFile(QString("/sys/class/block/%1/device/model").arg(name));
+        d.model = model.isEmpty() ? tr("Unknown device") : model;
+
+        const QString rotational = readSysTextFile(QString("/sys/class/block/%1/queue/rotational").arg(name));
+        if (rotational == "1")
+            d.type = "HDD";
+        else if (rotational == "0")
+            d.type = "SSD";
+        else
+            d.type = tr("Unknown");
+
+        rebuilt.append(d);
+    }
+
+    this->m_disks = rebuilt;
+}
+
+bool PerfDataProvider::sampleDisks()
+{
+    QFile f("/proc/diskstats");
+    if (!f.open(QIODevice::ReadOnly | QIODevice::Text))
+        return false;
+
+    struct DiskCounters
+    {
+        quint64 readSectors  { 0 };
+        quint64 writeSectors { 0 };
+        quint64 ioMs         { 0 };
+    };
+    QHash<QString, DiskCounters> countersByName;
+    QSet<QString> measurableDevices;
+
+    for (;;)
+    {
+        const QByteArray line = f.readLine();
+        if (line.isNull())
+            break;
+        const QList<QByteArray> parts = line.simplified().split(' ');
+        if (parts.size() < 14)
+            continue;
+
+        DiskCounters c;
+        c.readSectors  = parts.at(5).toULongLong();
+        c.writeSectors = parts.at(9).toULongLong();
+        c.ioMs         = parts.at(12).toULongLong();
+        const QString devName = QString::fromUtf8(parts.at(2));
+        countersByName.insert(devName, c);
+        measurableDevices.insert(devName);
+    }
+    f.close();
+
+    this->refreshDisks(measurableDevices);
+
+    if (!this->m_diskTimer.isValid())
+        this->m_diskTimer.start();
+
+    const qint64 nowMs = this->m_diskTimer.elapsed();
+    const qint64 dtMs = (this->m_prevDiskSampleMs > 0) ? (nowMs - this->m_prevDiskSampleMs) : 0;
+    this->m_prevDiskSampleMs = nowMs;
+
+    static constexpr double kSectorBytes = 512.0;
+
+    for (DiskSample &d : this->m_disks)
+    {
+        const auto it = countersByName.constFind(d.name);
+        if (it == countersByName.cend())
+        {
+            d.activePct = 0.0;
+            d.readBps = 0.0;
+            d.writeBps = 0.0;
+            appendHistory(d.activeHistory, 0.0);
+            continue;
+        }
+
+        const DiskCounters c = it.value();
+        if (dtMs <= 0)
+        {
+            d.prevReadSecs  = c.readSectors;
+            d.prevWriteSecs = c.writeSectors;
+            d.prevIoMs      = c.ioMs;
+            appendHistory(d.activeHistory, 0.0);
+            continue;
+        }
+
+        const quint64 dReadSecs  = (c.readSectors  >= d.prevReadSecs ) ? (c.readSectors  - d.prevReadSecs ) : 0;
+        const quint64 dWriteSecs = (c.writeSectors >= d.prevWriteSecs) ? (c.writeSectors - d.prevWriteSecs) : 0;
+        const quint64 dIoMs      = (c.ioMs         >= d.prevIoMs     ) ? (c.ioMs         - d.prevIoMs     ) : 0;
+
+        d.prevReadSecs  = c.readSectors;
+        d.prevWriteSecs = c.writeSectors;
+        d.prevIoMs      = c.ioMs;
+
+        d.activePct = qBound(0.0,
+                             static_cast<double>(dIoMs) * 100.0 / static_cast<double>(dtMs),
+                             100.0);
+        d.readBps  = static_cast<double>(dReadSecs)  * kSectorBytes * 1000.0 / static_cast<double>(dtMs);
+        d.writeBps = static_cast<double>(dWriteSecs) * kSectorBytes * 1000.0 / static_cast<double>(dtMs);
+
+        appendHistory(d.activeHistory, d.activePct);
+    }
+
+    return true;
+}
+
 // ── Process / thread counts ───────────────────────────────────────────────────
 
 void PerfDataProvider::sampleProcessStats()
@@ -279,7 +599,8 @@ void PerfDataProvider::readCpuMetadata()
     if (!f.open(QIODevice::ReadOnly | QIODevice::Text))
         return;
 
-    bool gotModel = false, gotBase = false;
+    bool gotModel = false, gotBase = false, gotFlags = false;
+    bool hasHypervisorFlag = false;
     for (;;)
     {
         const QByteArray line = f.readLine();
@@ -302,12 +623,18 @@ void PerfDataProvider::readCpuMetadata()
             this->m_cpuBaseMhz = val.toDouble();
             gotBase = true;
         }
+        else if (!gotFlags && key == "flags")
+        {
+            hasHypervisorFlag = val.contains("hypervisor");
+            gotFlags = true;
+        }
 
-        if (gotModel && gotBase)
+        if (gotModel && gotBase && gotFlags)
             break;
     }
     f.close();
 
+    this->m_cpuIsVirtualMachine = hasHypervisorFlag;
     this->readCurrentFreq();
 }
 
@@ -347,7 +674,108 @@ void PerfDataProvider::readCurrentFreq()
     f.close();
 }
 
+void PerfDataProvider::readHardwareMetadata()
+{
+    // Best-effort VM detection from DMI strings.
+    const QString dmiVendor  = readSysTextFile("/sys/devices/virtual/dmi/id/sys_vendor").toLower();
+    const QString dmiProduct = readSysTextFile("/sys/devices/virtual/dmi/id/product_name").toLower();
+    const QString dmiBoard   = readSysTextFile("/sys/devices/virtual/dmi/id/board_vendor").toLower();
+    const QString dmiBios    = readSysTextFile("/sys/devices/virtual/dmi/id/bios_vendor").toLower();
+    const QString dmiAll = dmiVendor + " " + dmiProduct + " " + dmiBoard + " " + dmiBios;
+
+    struct VmMarker { const char *needle; const char *label; };
+    static const VmMarker kVmMarkers[] = {
+        { "kvm",        "KVM" },
+        { "qemu",       "QEMU" },
+        { "vmware",     "VMware" },
+        { "virtualbox", "VirtualBox" },
+        { "microsoft",  "Hyper-V" },
+        { "hyper-v",    "Hyper-V" },
+        { "xen",        "Xen" },
+        { "bhyve",      "bhyve" },
+        { "parallels",  "Parallels" }
+    };
+
+    for (const VmMarker &m : kVmMarkers)
+    {
+        if (dmiAll.contains(m.needle))
+        {
+            this->m_cpuIsVirtualMachine = true;
+            this->m_cpuVmVendor = QString::fromLatin1(m.label);
+            break;
+        }
+    }
+
+    // Best-effort DIMM population and memory speed from SMBIOS type 17.
+    const QDir entriesDir("/sys/firmware/dmi/entries");
+    const QStringList type17 = entriesDir.entryList(QStringList() << "17-*", QDir::Dirs | QDir::NoDotAndDotDot);
+    int slotsTotal = 0;
+    int slotsUsed = 0;
+    int speedMtps = 0;
+
+    for (const QString &entry : type17)
+    {
+        QFile rawFile(entriesDir.absoluteFilePath(entry + "/raw"));
+        if (!rawFile.open(QIODevice::ReadOnly))
+            continue;
+
+        const QByteArray raw = rawFile.readAll();
+        rawFile.close();
+        if (raw.size() < 0x17)
+            continue;
+
+        ++slotsTotal;
+
+        const int structLen = static_cast<unsigned char>(raw.at(1));
+        const quint16 sizeField = readLe16(raw, 12);
+
+        qint64 sizeMb = 0;
+        if (sizeField == 0 || sizeField == 0xFFFF)
+            sizeMb = 0;
+        else if (sizeField == 0x7FFF && structLen >= 0x20)
+            sizeMb = static_cast<qint64>(readLe32(raw, 28));
+        else if (sizeField & 0x8000)
+            sizeMb = static_cast<qint64>(sizeField & 0x7FFF) / 1024; // value is in KiB
+        else
+            sizeMb = static_cast<qint64>(sizeField); // value is in MiB
+
+        if (sizeMb > 0)
+        {
+            ++slotsUsed;
+            const int speed = static_cast<int>(readLe16(raw, 21));
+            int configured = 0;
+            if (structLen >= 0x22)
+                configured = static_cast<int>(readLe16(raw, 32));
+            speedMtps = qMax(speedMtps, configured > 0 ? configured : speed);
+        }
+    }
+
+    this->m_memDimmSlotsTotal = slotsTotal;
+    this->m_memDimmSlotsUsed  = slotsUsed;
+    this->m_memSpeedMtps      = speedMtps;
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+quint16 PerfDataProvider::readLe16(const QByteArray &raw, int off)
+{
+    if (off < 0 || off + 1 >= raw.size())
+        return 0;
+    const quint16 b0 = static_cast<unsigned char>(raw.at(off));
+    const quint16 b1 = static_cast<unsigned char>(raw.at(off + 1));
+    return static_cast<quint16>(b0 | (b1 << 8));
+}
+
+quint32 PerfDataProvider::readLe32(const QByteArray &raw, int off)
+{
+    if (off < 0 || off + 3 >= raw.size())
+        return 0;
+    const quint32 b0 = static_cast<unsigned char>(raw.at(off));
+    const quint32 b1 = static_cast<unsigned char>(raw.at(off + 1));
+    const quint32 b2 = static_cast<unsigned char>(raw.at(off + 2));
+    const quint32 b3 = static_cast<unsigned char>(raw.at(off + 3));
+    return static_cast<quint32>(b0 | (b1 << 8) | (b2 << 16) | (b3 << 24));
+}
 
 // static
 void PerfDataProvider::appendHistory(QVector<double> &vec, double val)

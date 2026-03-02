@@ -53,11 +53,22 @@ void MemoryDetailWidget::onUpdated()
     this->ui->statCachedValue->setText(fmtGb(cached) + " GB");
     this->ui->statBuffersValue->setText(fmtGb(buffers) + " GB");
     this->ui->statFreeValue->setText(fmtGb(free)     + " GB");
+    const int dimmUsed = this->m_provider->memDimmSlotsUsed();
+    const int dimmTotal = this->m_provider->memDimmSlotsTotal();
+    if (dimmTotal > 0)
+        this->ui->statDimmSlotsValue->setText(tr("%1 / %2").arg(dimmUsed).arg(dimmTotal));
+    else
+        this->ui->statDimmSlotsValue->setText(tr("—"));
+
+    const int memMtps = this->m_provider->memSpeedMtps();
+    if (memMtps > 0)
+        this->ui->statMemSpeedValue->setText(tr("%1 MT/s").arg(memMtps));
+    else
+        this->ui->statMemSpeedValue->setText(tr("—"));
 
     // Dirty shown in MB when small, GB when large
     if (dirty < 1024LL * 1024LL)
-        this->ui->statDirtyValue->setText(
-                QString::number(dirty / 1024.0, 'f', 1) + " MB");
+        this->ui->statDirtyValue->setText(QString::number(dirty / 1024.0, 'f', 1) + " MB");
     else
         this->ui->statDirtyValue->setText(fmtGb(dirty) + " GB");
 

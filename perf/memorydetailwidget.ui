@@ -79,7 +79,7 @@
    <item>
     <layout class="QHBoxLayout" name="timeAxisLayout">
      <item>
-      <widget class="QLabel" name="label">
+      <widget class="QLabel" name="timeLeftLabel">
        <property name="styleSheet">
         <string>color: #666; font-size: 8pt;</string>
        </property>
@@ -102,7 +102,7 @@
       </spacer>
      </item>
      <item>
-      <widget class="QLabel" name="label">
+      <widget class="QLabel" name="timeRightLabel">
        <property name="styleSheet">
         <string>color: #666; font-size: 8pt;</string>
        </property>
@@ -152,7 +152,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QLabel" name="label">
+      <widget class="QLabel" name="legendUsedLabel">
        <property name="styleSheet">
         <string>color:#aaa; font-size: 8pt;</string>
        </property>
@@ -172,7 +172,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QLabel" name="label">
+      <widget class="QLabel" name="legendDirtyLabel">
        <property name="styleSheet">
         <string>color:#aaa; font-size: 8pt;</string>
        </property>
@@ -192,7 +192,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QLabel" name="label">
+      <widget class="QLabel" name="legendCachedLabel">
        <property name="styleSheet">
         <string>color:#aaa; font-size: 8pt;</string>
        </property>
@@ -212,7 +212,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QLabel" name="label">
+      <widget class="QLabel" name="legendFreeLabel">
        <property name="styleSheet">
         <string>color:#aaa; font-size: 8pt;</string>
        </property>
@@ -248,7 +248,7 @@
       <number>8</number>
      </property>
      <item row="0" column="0">
-      <widget class="QLabel" name="label">
+      <widget class="QLabel" name="inUseLabel">
        <property name="styleSheet">
         <string>color:#888;</string>
        </property>
@@ -265,7 +265,7 @@
       </widget>
      </item>
      <item row="0" column="2">
-      <widget class="QLabel" name="label">
+      <widget class="QLabel" name="availableLabel">
        <property name="styleSheet">
         <string>color:#888;</string>
        </property>
@@ -282,7 +282,7 @@
       </widget>
      </item>
      <item row="1" column="0">
-      <widget class="QLabel" name="label">
+      <widget class="QLabel" name="dirtyLabel">
        <property name="styleSheet">
         <string>color:#888;</string>
        </property>
@@ -299,7 +299,7 @@
       </widget>
      </item>
      <item row="1" column="2">
-      <widget class="QLabel" name="label">
+      <widget class="QLabel" name="freeLabel">
        <property name="styleSheet">
         <string>color:#888;</string>
        </property>
@@ -316,7 +316,7 @@
       </widget>
      </item>
      <item row="2" column="0">
-      <widget class="QLabel" name="label">
+      <widget class="QLabel" name="cachedLabel">
        <property name="styleSheet">
         <string>color:#888;</string>
        </property>
@@ -333,7 +333,7 @@
       </widget>
      </item>
      <item row="2" column="2">
-      <widget class="QLabel" name="label">
+      <widget class="QLabel" name="buffersLabel">
        <property name="styleSheet">
         <string>color:#888;</string>
        </property>
@@ -344,6 +344,40 @@
      </item>
      <item row="2" column="3">
       <widget class="QLabel" name="statBuffersValue">
+       <property name="text">
+        <string>—</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0">
+      <widget class="QLabel" name="dimmSlotsLabel">
+       <property name="styleSheet">
+        <string>color:#888;</string>
+       </property>
+       <property name="text">
+        <string>DIMM slots used</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="QLabel" name="statDimmSlotsValue">
+       <property name="text">
+        <string>—</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="2">
+      <widget class="QLabel" name="memorySpeedLabel">
+       <property name="styleSheet">
+        <string>color:#888;</string>
+       </property>
+       <property name="text">
+        <string>Speed</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="3">
+      <widget class="QLabel" name="statMemSpeedValue">
        <property name="text">
         <string>—</string>
        </property>
