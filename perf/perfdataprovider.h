@@ -24,6 +24,7 @@ class PerfDataProvider : public QObject
 
     public:
         explicit PerfDataProvider(QObject *parent = nullptr);
+        ~PerfDataProvider() override;
 
         void setInterval(int ms);
         void setActive(bool active);
@@ -88,7 +89,7 @@ class PerfDataProvider : public QObject
         const QVector<double> &diskReadHistory(int i) const;
         const QVector<double> &diskWriteHistory(int i) const;
 
-        // ── GPUs (tooling-backed, currently nvidia-smi) ──────────────────────
+        // ── GPUs (tooling-backed, currently NVML runtime-loaded) ─────────────
         int gpuCount() const { return this->m_gpus.size(); }
         QString gpuName(int i) const;
         QString gpuDriverVersion(int i) const;
@@ -209,8 +210,8 @@ class PerfDataProvider : public QObject
 
         // GPU state
         QVector<GpuSample>  m_gpus;
-        bool                m_hasNvidiaSmi { false };
-        QString             m_nvidiaSmiPath;
+        bool                m_hasNvml { false };
+        void               *m_nvmlLibHandle { nullptr };
 
         bool sampleCpu();
         bool sampleMemory();
@@ -222,7 +223,8 @@ class PerfDataProvider : public QObject
         void readHardwareMetadata();
         void refreshDisks(const QSet<QString> &measurableDevices);
         void detectGpuBackends();
-        bool sampleNvidiaSmi();
+        bool sampleNvml();
+        void unloadGpuBackends();
         static double parsePercentField(const QString &field);
         static qint64 parseMiBField(const QString &field);
 

@@ -7,16 +7,60 @@
 #include <QFileInfo>
 #include <QFile>
 #include <QHash>
-#include <QProcess>
 #include <QRegularExpression>
-#include <QStandardPaths>
 #include <QStringList>
-#include <QXmlStreamReader>
+#include <dlfcn.h>
+#include <stdint.h>
 #include <sys/statvfs.h>
 #include <unistd.h>
 
 namespace Perf
 {
+
+namespace
+{
+using NvmlReturn = unsigned int;
+using NvmlDevice = void *;
+
+struct NvmlUtilization
+{
+    unsigned int gpu;
+    unsigned int memory;
+};
+
+struct NvmlMemory
+{
+    uint64_t total;
+    uint64_t free;
+    uint64_t used;
+};
+
+static constexpr NvmlReturn NVML_SUCCESS = 0;
+
+using FnNvmlInitV2 = NvmlReturn (*)();
+using FnNvmlShutdown = NvmlReturn (*)();
+using FnNvmlSystemGetDriverVersion = NvmlReturn (*)(char *, unsigned int);
+using FnNvmlDeviceGetCountV2 = NvmlReturn (*)(unsigned int *);
+using FnNvmlDeviceGetHandleByIndexV2 = NvmlReturn (*)(unsigned int, NvmlDevice *);
+using FnNvmlDeviceGetName = NvmlReturn (*)(NvmlDevice, char *, unsigned int);
+using FnNvmlDeviceGetUUID = NvmlReturn (*)(NvmlDevice, char *, unsigned int);
+using FnNvmlDeviceGetUtilizationRates = NvmlReturn (*)(NvmlDevice, NvmlUtilization *);
+using FnNvmlDeviceGetMemoryInfo = NvmlReturn (*)(NvmlDevice, NvmlMemory *);
+using FnNvmlDeviceGetEncoderUtilization = NvmlReturn (*)(NvmlDevice, unsigned int *, unsigned int *);
+using FnNvmlDeviceGetDecoderUtilization = NvmlReturn (*)(NvmlDevice, unsigned int *, unsigned int *);
+
+FnNvmlInitV2 pNvmlInitV2 = nullptr;
+FnNvmlShutdown pNvmlShutdown = nullptr;
+FnNvmlSystemGetDriverVersion pNvmlSystemGetDriverVersion = nullptr;
+FnNvmlDeviceGetCountV2 pNvmlDeviceGetCountV2 = nullptr;
+FnNvmlDeviceGetHandleByIndexV2 pNvmlDeviceGetHandleByIndexV2 = nullptr;
+FnNvmlDeviceGetName pNvmlDeviceGetName = nullptr;
+FnNvmlDeviceGetUUID pNvmlDeviceGetUUID = nullptr;
+FnNvmlDeviceGetUtilizationRates pNvmlDeviceGetUtilizationRates = nullptr;
+FnNvmlDeviceGetMemoryInfo pNvmlDeviceGetMemoryInfo = nullptr;
+FnNvmlDeviceGetEncoderUtilization pNvmlDeviceGetEncoderUtilization = nullptr;
+FnNvmlDeviceGetDecoderUtilization pNvmlDeviceGetDecoderUtilization = nullptr;
+}
 
 // ── Construction ──────────────────────────────────────────────────────────────
 
@@ -39,6 +83,11 @@ PerfDataProvider::PerfDataProvider(QObject *parent)
         this->sampleProcessStats();
 
     this->m_timer->start(1000);
+}
+
+PerfDataProvider::~PerfDataProvider()
+{
+    this->unloadGpuBackends();
 }
 
 void PerfDataProvider::setInterval(int ms)
@@ -789,145 +838,109 @@ bool PerfDataProvider::sampleDisks()
 
 void PerfDataProvider::detectGpuBackends()
 {
-    this->m_nvidiaSmiPath = QStandardPaths::findExecutable("nvidia-smi");
-    this->m_hasNvidiaSmi = false;
+    this->m_hasNvml = false;
+    this->m_nvmlLibHandle = nullptr;
 
-    if (this->m_nvidiaSmiPath.isEmpty())
+    this->m_nvmlLibHandle = ::dlopen("libnvidia-ml.so.1", RTLD_LAZY | RTLD_LOCAL);
+    if (!this->m_nvmlLibHandle)
+        this->m_nvmlLibHandle = ::dlopen("libnvidia-ml.so", RTLD_LAZY | RTLD_LOCAL);
+    if (!this->m_nvmlLibHandle)
         return;
 
-    QProcess p;
-    p.start(this->m_nvidiaSmiPath, QStringList() << "-L");
-    if (!p.waitForStarted(250) || !p.waitForFinished(800))
+    pNvmlInitV2 = reinterpret_cast<FnNvmlInitV2>(::dlsym(this->m_nvmlLibHandle, "nvmlInit_v2"));
+    pNvmlShutdown = reinterpret_cast<FnNvmlShutdown>(::dlsym(this->m_nvmlLibHandle, "nvmlShutdown"));
+    pNvmlSystemGetDriverVersion = reinterpret_cast<FnNvmlSystemGetDriverVersion>(
+                ::dlsym(this->m_nvmlLibHandle, "nvmlSystemGetDriverVersion"));
+    pNvmlDeviceGetCountV2 = reinterpret_cast<FnNvmlDeviceGetCountV2>(
+                ::dlsym(this->m_nvmlLibHandle, "nvmlDeviceGetCount_v2"));
+    pNvmlDeviceGetHandleByIndexV2 = reinterpret_cast<FnNvmlDeviceGetHandleByIndexV2>(
+                ::dlsym(this->m_nvmlLibHandle, "nvmlDeviceGetHandleByIndex_v2"));
+    pNvmlDeviceGetName = reinterpret_cast<FnNvmlDeviceGetName>(
+                ::dlsym(this->m_nvmlLibHandle, "nvmlDeviceGetName"));
+    pNvmlDeviceGetUUID = reinterpret_cast<FnNvmlDeviceGetUUID>(
+                ::dlsym(this->m_nvmlLibHandle, "nvmlDeviceGetUUID"));
+    pNvmlDeviceGetUtilizationRates = reinterpret_cast<FnNvmlDeviceGetUtilizationRates>(
+                ::dlsym(this->m_nvmlLibHandle, "nvmlDeviceGetUtilizationRates"));
+    pNvmlDeviceGetMemoryInfo = reinterpret_cast<FnNvmlDeviceGetMemoryInfo>(
+                ::dlsym(this->m_nvmlLibHandle, "nvmlDeviceGetMemoryInfo"));
+    pNvmlDeviceGetEncoderUtilization = reinterpret_cast<FnNvmlDeviceGetEncoderUtilization>(
+                ::dlsym(this->m_nvmlLibHandle, "nvmlDeviceGetEncoderUtilization"));
+    pNvmlDeviceGetDecoderUtilization = reinterpret_cast<FnNvmlDeviceGetDecoderUtilization>(
+                ::dlsym(this->m_nvmlLibHandle, "nvmlDeviceGetDecoderUtilization"));
+
+    if (!pNvmlInitV2 || !pNvmlShutdown || !pNvmlDeviceGetCountV2
+        || !pNvmlDeviceGetHandleByIndexV2 || !pNvmlDeviceGetName
+        || !pNvmlDeviceGetUUID || !pNvmlDeviceGetUtilizationRates
+        || !pNvmlDeviceGetMemoryInfo)
     {
-        p.kill();
-        p.waitForFinished(100);
+        this->unloadGpuBackends();
         return;
     }
 
-    if (p.exitStatus() != QProcess::NormalExit || p.exitCode() != 0)
+    if (pNvmlInitV2() != NVML_SUCCESS)
+    {
+        this->unloadGpuBackends();
         return;
+    }
 
-    const QString out = QString::fromUtf8(p.readAllStandardOutput());
-    this->m_hasNvidiaSmi = out.contains("GPU ", Qt::CaseInsensitive);
+    unsigned int count = 0;
+    if (pNvmlDeviceGetCountV2(&count) != NVML_SUCCESS || count == 0)
+    {
+        this->unloadGpuBackends();
+        return;
+    }
+
+    this->m_hasNvml = true;
 }
 
 bool PerfDataProvider::sampleGpus()
 {
-    if (this->m_hasNvidiaSmi)
-        return this->sampleNvidiaSmi();
+    if (this->m_hasNvml)
+        return this->sampleNvml();
 
     this->m_gpus.clear();
     return true;
 }
 
-bool PerfDataProvider::sampleNvidiaSmi()
+void PerfDataProvider::unloadGpuBackends()
 {
-    QProcess p;
-    p.start(this->m_nvidiaSmiPath, QStringList() << "-q" << "-x");
-    if (!p.waitForStarted(250) || !p.waitForFinished(1200))
+    if (this->m_hasNvml && pNvmlShutdown)
+        pNvmlShutdown();
+
+    this->m_hasNvml = false;
+
+    pNvmlInitV2 = nullptr;
+    pNvmlShutdown = nullptr;
+    pNvmlSystemGetDriverVersion = nullptr;
+    pNvmlDeviceGetCountV2 = nullptr;
+    pNvmlDeviceGetHandleByIndexV2 = nullptr;
+    pNvmlDeviceGetName = nullptr;
+    pNvmlDeviceGetUUID = nullptr;
+    pNvmlDeviceGetUtilizationRates = nullptr;
+    pNvmlDeviceGetMemoryInfo = nullptr;
+    pNvmlDeviceGetEncoderUtilization = nullptr;
+    pNvmlDeviceGetDecoderUtilization = nullptr;
+
+    if (this->m_nvmlLibHandle)
     {
-        p.kill();
-        p.waitForFinished(100);
-        return false;
+        ::dlclose(this->m_nvmlLibHandle);
+        this->m_nvmlLibHandle = nullptr;
     }
-    if (p.exitStatus() != QProcess::NormalExit || p.exitCode() != 0)
+}
+
+bool PerfDataProvider::sampleNvml()
+{
+    if (!this->m_hasNvml || !pNvmlDeviceGetCountV2 || !pNvmlDeviceGetHandleByIndexV2)
         return false;
 
-    struct ParsedGpu
-    {
-        QString id;
-        QString name;
-        QString driverVersion;
-        QString gpuUtil;
-        QString memUtil;
-        QString encUtil;
-        QString decUtil;
-        QString memUsed;
-        QString memTotal;
-    };
-
-    QVector<ParsedGpu> parsed;
-    ParsedGpu current;
-    QString driverVersion;
-    bool inGpu = false;
-    QStringList pathStack;
-
-    QXmlStreamReader xml(p.readAllStandardOutput());
-    for (;;)
-    {
-        const auto tok = xml.readNext();
-        if (tok == QXmlStreamReader::Invalid || tok == QXmlStreamReader::EndDocument)
-            break;
-
-        if (tok == QXmlStreamReader::StartElement)
-        {
-            const QString name = xml.name().toString();
-            pathStack.append(name);
-            if (pathStack.join('/') == "nvidia_smi_log/gpu")
-            {
-                inGpu = true;
-                current = ParsedGpu{};
-            }
-            continue;
-        }
-
-        if (tok == QXmlStreamReader::Characters)
-        {
-            if (xml.isWhitespace())
-                continue;
-
-            const QString path = pathStack.join('/');
-            const QString text = xml.text().toString().trimmed();
-            if (text.isEmpty())
-                continue;
-
-            if (path == "nvidia_smi_log/driver_version")
-            {
-                driverVersion = text;
-                continue;
-            }
-
-            if (!inGpu)
-                continue;
-
-            const QString rel = path.mid(QString("nvidia_smi_log/gpu/").size());
-            if (rel == "uuid")
-                current.id = text;
-            else if (rel == "product_name")
-                current.name = text;
-            else if (rel == "utilization/gpu_util")
-                current.gpuUtil = text;
-            else if (rel == "utilization/memory_util")
-                current.memUtil = text;
-            else if (rel == "utilization/encoder_util")
-                current.encUtil = text;
-            else if (rel == "utilization/decoder_util")
-                current.decUtil = text;
-            else if (rel == "fb_memory_usage/used")
-                current.memUsed = text;
-            else if (rel == "fb_memory_usage/total")
-                current.memTotal = text;
-            continue;
-        }
-
-        if (tok == QXmlStreamReader::EndElement)
-        {
-            const QString ended = xml.name().toString();
-            if (ended == "gpu" && inGpu)
-            {
-                if (current.id.isEmpty())
-                    current.id = current.name;
-                current.driverVersion = driverVersion;
-                parsed.append(current);
-                inGpu = false;
-            }
-            if (!pathStack.isEmpty())
-                pathStack.removeLast();
-        }
-    }
-
-    if (xml.hasError())
+    unsigned int count = 0;
+    if (pNvmlDeviceGetCountV2(&count) != NVML_SUCCESS)
         return false;
+
+    char driverVer[96] = {};
+    if (pNvmlSystemGetDriverVersion)
+        pNvmlSystemGetDriverVersion(driverVer, sizeof(driverVer));
+    const QString driverVersion = QString::fromLatin1(driverVer).trimmed();
 
     QHash<QString, GpuSample> oldById;
     oldById.reserve(this->m_gpus.size());
@@ -935,18 +948,37 @@ bool PerfDataProvider::sampleNvidiaSmi()
         oldById.insert(g.id, g);
 
     QVector<GpuSample> rebuilt;
-    rebuilt.reserve(parsed.size());
+    rebuilt.reserve(static_cast<int>(count));
 
-    for (const ParsedGpu &pg : parsed)
+    for (unsigned int i = 0; i < count; ++i)
     {
-        GpuSample g = oldById.value(pg.id);
-        g.id = pg.id;
-        g.name = pg.name;
-        g.driverVersion = pg.driverVersion;
-        g.backend = "nvidia-smi";
-        g.utilPct = qBound(0.0, parsePercentField(pg.gpuUtil), 100.0);
-        g.memUsedMiB = qMax<qint64>(0, parseMiBField(pg.memUsed));
-        g.memTotalMiB = qMax<qint64>(0, parseMiBField(pg.memTotal));
+        NvmlDevice dev = nullptr;
+        if (pNvmlDeviceGetHandleByIndexV2(i, &dev) != NVML_SUCCESS || !dev)
+            continue;
+
+        char nameBuf[128] = {};
+        char uuidBuf[96] = {};
+        pNvmlDeviceGetName(dev, nameBuf, sizeof(nameBuf));
+        pNvmlDeviceGetUUID(dev, uuidBuf, sizeof(uuidBuf));
+
+        const QString name = QString::fromLatin1(nameBuf).trimmed();
+        QString id = QString::fromLatin1(uuidBuf).trimmed();
+        if (id.isEmpty())
+            id = QString("gpu-%1").arg(i);
+
+        NvmlUtilization util{};
+        NvmlMemory mem{};
+        const bool hasUtil = (pNvmlDeviceGetUtilizationRates(dev, &util) == NVML_SUCCESS);
+        const bool hasMem = (pNvmlDeviceGetMemoryInfo(dev, &mem) == NVML_SUCCESS);
+
+        GpuSample g = oldById.value(id);
+        g.id = id;
+        g.name = name;
+        g.driverVersion = driverVersion;
+        g.backend = "NVML";
+        g.utilPct = hasUtil ? qBound(0.0, static_cast<double>(util.gpu), 100.0) : 0.0;
+        g.memUsedMiB = hasMem ? static_cast<qint64>(mem.used / (1024ULL * 1024ULL)) : 0;
+        g.memTotalMiB = hasMem ? static_cast<qint64>(mem.total / (1024ULL * 1024ULL)) : 0;
         appendHistory(g.utilHistory, g.utilPct);
         const double memPct = (g.memTotalMiB > 0)
                               ? (static_cast<double>(g.memUsedMiB) / static_cast<double>(g.memTotalMiB)) * 100.0
@@ -957,32 +989,34 @@ bool PerfDataProvider::sampleNvidiaSmi()
         for (const GpuEngineSample &e : g.engines)
             oldEngines.insert(e.key, e);
 
-        const struct
-        {
-            const char *key;
-            const char *label;
-            const QString *field;
-        } engineMap[] = {
-            { "3d", "3D", &pg.gpuUtil },
-            { "cuda", "CUDA", &pg.gpuUtil },
-            { "copy", "Copy", &pg.memUtil },
-            { "video-encode", "Video Encode", &pg.encUtil },
-            { "video-decode", "Video Decode", &pg.decUtil }
-        };
-
         QVector<GpuEngineSample> engines;
-        for (const auto &e : engineMap)
+        auto addEngine = [&](const QString &key, const QString &label, double pct)
         {
-            const double pct = parsePercentField(*e.field);
-            if (pct < 0.0)
-                continue;
-
-            GpuEngineSample eng = oldEngines.value(QString::fromLatin1(e.key));
-            eng.key = QString::fromLatin1(e.key);
-            eng.label = QString::fromLatin1(e.label);
+            GpuEngineSample eng = oldEngines.value(key);
+            eng.key = key;
+            eng.label = label;
             eng.pct = qBound(0.0, pct, 100.0);
             appendHistory(eng.history, eng.pct);
             engines.append(eng);
+        };
+
+        if (hasUtil)
+        {
+            addEngine("3d", "3D", util.gpu);
+            addEngine("cuda", "CUDA", util.gpu);
+            addEngine("copy", "Copy", util.memory);
+        }
+        if (pNvmlDeviceGetEncoderUtilization)
+        {
+            unsigned int enc = 0, sampling = 0;
+            if (pNvmlDeviceGetEncoderUtilization(dev, &enc, &sampling) == NVML_SUCCESS)
+                addEngine("video-encode", "Video Encode", enc);
+        }
+        if (pNvmlDeviceGetDecoderUtilization)
+        {
+            unsigned int dec = 0, sampling = 0;
+            if (pNvmlDeviceGetDecoderUtilization(dev, &dec, &sampling) == NVML_SUCCESS)
+                addEngine("video-decode", "Video Decode", dec);
         }
 
         g.engines = engines;
