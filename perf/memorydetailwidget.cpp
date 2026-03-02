@@ -25,15 +25,13 @@ MemoryDetailWidget::~MemoryDetailWidget()
 void MemoryDetailWidget::setProvider(PerfDataProvider *provider)
 {
     if (this->m_provider)
-        disconnect(this->m_provider, &PerfDataProvider::updated,
-                   this, &MemoryDetailWidget::onUpdated);
+        disconnect(this->m_provider, &PerfDataProvider::updated, this, &MemoryDetailWidget::onUpdated);
 
     this->m_provider = provider;
 
     if (this->m_provider)
     {
-        connect(this->m_provider, &PerfDataProvider::updated,
-                this, &MemoryDetailWidget::onUpdated);
+        connect(this->m_provider, &PerfDataProvider::updated, this, &MemoryDetailWidget::onUpdated);
         this->onUpdated();
     }
 }

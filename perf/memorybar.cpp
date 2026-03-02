@@ -13,15 +13,13 @@ static const QColor kColCached(0x55, 0x22, 0x55);        // muted dark purple
 static const QColor kColFree  (0x11, 0x08, 0x11);        // near-background
 static const QColor kColBorder(0x88, 0x44, 0x88);        // subtle purple border
 
-MemoryBar::MemoryBar(QWidget *parent)
-    : QWidget(parent)
+MemoryBar::MemoryBar(QWidget *parent) : QWidget(parent)
 {
     this->setMinimumHeight(12);
     this->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 }
 
-void MemoryBar::setSegments(qint64 used, qint64 dirty,
-                             qint64 cached, qint64 free, qint64 total)
+void MemoryBar::setSegments(qint64 used, qint64 dirty, qint64 cached, qint64 free, qint64 total)
 {
     this->m_used   = qMax(0LL, used);
     this->m_dirty  = qMax(0LL, dirty);
@@ -53,7 +51,8 @@ void MemoryBar::paintEvent(QPaintEvent * /*event*/)
     const int y = r.top();
     const int h = r.height();
 
-    auto drawSeg = [&](int sw, const QColor &col) {
+    auto drawSeg = [&](int sw, const QColor &col)
+    {
         if (sw <= 0) return;
         p.fillRect(x, y, sw, h, col);
         x += sw;

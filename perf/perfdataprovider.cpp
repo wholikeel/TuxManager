@@ -108,9 +108,12 @@ bool PerfDataProvider::sampleCpu()
 
     int coreIdx = 0;
 
-    while (!f.atEnd())
+    for (;;)
     {
-        const QByteArray raw   = f.readLine();
+        const QByteArray raw = f.readLine();
+        if (raw.isNull())
+            break;
+
         const QList<QByteArray> parts = raw.simplified().split(' ');
         if (parts.isEmpty())
             continue;
@@ -190,9 +193,12 @@ bool PerfDataProvider::sampleMemory()
     qint64 buffers  = 0, cached   = 0, sReclaimable = 0, shmem = 0;
     qint64 dirty    = 0, writeback = 0;
 
-    while (!f.atEnd())
+    for (;;)
     {
-        const QByteArray line  = f.readLine();
+        const QByteArray line = f.readLine();
+        if (line.isNull())
+            break;
+
         const int        colon = line.indexOf(':');
         if (colon < 0)
             continue;
@@ -222,14 +228,6 @@ bool PerfDataProvider::sampleMemory()
     // htop formula: used = total - free - buffers - page_cache
     // where page_cache = Cached + SReclaimable - Shmem
     const qint64 pageCache = cached + sReclaimable - shmem;
-
-    if (memTotal <= 0)
-        LOG_WARN("meminfo parse produced MemTotal <= 0");
-
-    LOG_INFO(QString("meminfo: total=%1 free=%2 avail=%3 bufs=%4 cached=%5 srec=%6 shmem=%7 dirty=%8 wb=%9")
-             .arg(memTotal).arg(memFree).arg(memAvail)
-             .arg(buffers).arg(cached).arg(sReclaimable)
-             .arg(shmem).arg(dirty).arg(writeback));
 
     this->m_memTotalKb   = memTotal;
     this->m_memAvailKb   = memAvail;
@@ -282,9 +280,12 @@ void PerfDataProvider::readCpuMetadata()
         return;
 
     bool gotModel = false, gotBase = false;
-    while (!f.atEnd())
+    for (;;)
     {
-        const QByteArray line  = f.readLine();
+        const QByteArray line = f.readLine();
+        if (line.isNull())
+            break;
+
         const int        colon = line.indexOf(':');
         if (colon < 0)
             continue;
@@ -328,9 +329,12 @@ void PerfDataProvider::readCurrentFreq()
     QFile f("/proc/cpuinfo");
     if (!f.open(QIODevice::ReadOnly | QIODevice::Text))
         return;
-    while (!f.atEnd())
+    for (;;)
     {
-        const QByteArray line  = f.readLine();
+        const QByteArray line = f.readLine();
+        if (line.isNull())
+            break;
+
         const int        colon = line.indexOf(':');
         if (colon < 0)
             continue;
