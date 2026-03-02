@@ -22,6 +22,8 @@ class PerformanceWidget : public QWidget
     public:
         explicit PerformanceWidget(QWidget *parent = nullptr);
         ~PerformanceWidget();
+        void setActive(bool active);
+        bool isActive() const { return this->m_active; }
 
     private slots:
         void onProviderUpdated();
@@ -37,6 +39,7 @@ class PerformanceWidget : public QWidget
         QVector<Perf::SidePanelItem *>   m_diskItems;
         QVector<Perf::DiskDetailWidget *> m_diskDetails;
         QVector<QString>                 m_diskNames;
+        bool                             m_active { false };
 
         enum PanelIndex { PanelCpu = 0, PanelMemory = 1 };
 

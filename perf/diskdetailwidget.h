@@ -28,6 +28,7 @@ class DiskDetailWidget : public QWidget
 
     private:
         static QString formatRate(double bytesPerSec);
+        static QString formatSize(qint64 bytes);
 
         Ui::DiskDetailWidget *ui;
         PerfDataProvider     *m_provider { nullptr };

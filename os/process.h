@@ -12,6 +12,13 @@ namespace Os
 class Process
 {
     public:
+        struct LoadOptions
+        {
+            bool  includeKernelTasks  { true };
+            bool  includeOtherUsers   { true };
+            uid_t myUid               { 0 };
+        };
+
         pid_t   pid           { 0 };
         pid_t   ppid          { 0 };
         QString name;                     ///< Short name  (/proc/pid/comm)
@@ -31,12 +38,14 @@ class Process
 
         /// Load a snapshot of every running process from /proc.
         static QList<Process> loadAll();
+        static QList<Process> loadAll(const LoadOptions &options);
 
         /// Human-readable description of a raw state character.
         static QString stateString(char state);
 
     private:
-        static bool loadOne(pid_t pid, Process &out);
+        static bool loadOneStatAndUid(pid_t pid, Process &out);
+        static void loadUserAndCmdline(Process &proc);
 };
 
 } // namespace Os

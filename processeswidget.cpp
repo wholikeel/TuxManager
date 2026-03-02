@@ -42,10 +42,7 @@ ProcessesWidget::ProcessesWidget(QWidget *parent)
     connect(this->m_proxy, &QAbstractItemModel::rowsRemoved,
             this, &ProcessesWidget::updateStatusBar);
 
-    // First sample (no CPU% yet)
-    this->m_model->Refresh();
-    // Second tick gives CPU%
-    this->m_refreshTimer->start(CFG->RefreshRateMs);
+    // MainWindow controls active/inactive state based on current top tab.
 }
 
 ProcessesWidget::~ProcessesWidget()
@@ -62,6 +59,8 @@ void ProcessesWidget::setupTable()
     // Load persisted view toggles
     this->m_proxy->ShowKernelTasks     = CFG->ShowKernelTasks;
     this->m_proxy->ShowOtherUsersProcs = CFG->ShowOtherUsersProcs;
+    this->m_model->setShowKernelTasks(CFG->ShowKernelTasks);
+    this->m_model->setShowOtherUsersProcs(CFG->ShowOtherUsersProcs);
 
     QTableView *tv = this->ui->tableView;
     tv->setModel(this->m_proxy);
@@ -124,6 +123,25 @@ void ProcessesWidget::setupRefreshCombo()
             cb->setCurrentIndex(i);
             break;
         }
+    }
+}
+
+void ProcessesWidget::setActive(bool active)
+{
+    if (this->m_active == active)
+        return;
+
+    this->m_active = active;
+    if (active)
+    {
+        // Refresh immediately when user switches to Processes tab.
+        this->m_model->Refresh();
+        this->updateStatusBar();
+        this->m_refreshTimer->start(CFG->RefreshRateMs);
+    }
+    else
+    {
+        this->m_refreshTimer->stop();
     }
 }
 
@@ -220,8 +238,10 @@ void ProcessesWidget::onTableContextMenu(const QPoint &pos)
     connect(kernelAct, &QAction::toggled, this, [this](bool checked)
     {
         this->m_proxy->ShowKernelTasks = checked;
+        this->m_model->setShowKernelTasks(checked);
         CFG->ShowKernelTasks = checked;
-        this->m_proxy->applyFilters();
+        this->m_proxy->ApplyFilters();
+        this->onTimerTick();
         LOG_DEBUG(QString("ShowKernelTasks = %1").arg(checked));
     });
 
@@ -231,8 +251,10 @@ void ProcessesWidget::onTableContextMenu(const QPoint &pos)
     connect(otherUsersAct, &QAction::toggled, this, [this](bool checked)
     {
         this->m_proxy->ShowOtherUsersProcs = checked;
+        this->m_model->setShowOtherUsersProcs(checked);
         CFG->ShowOtherUsersProcs = checked;
-        this->m_proxy->applyFilters();
+        this->m_proxy->ApplyFilters();
+        this->onTimerTick();
         LOG_DEBUG(QString("ShowOtherUsersProcs = %1").arg(checked));
     });
     // ── Send signal submenu — requires selection ────────────────────────────

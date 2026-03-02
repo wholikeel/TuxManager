@@ -26,6 +26,9 @@ class PerfDataProvider : public QObject
         explicit PerfDataProvider(QObject *parent = nullptr);
 
         void setInterval(int ms);
+        void setActive(bool active);
+        bool isActive() const { return this->m_active; }
+        void setProcessStatsEnabled(bool enabled) { this->m_processStatsEnabled = enabled; }
 
         // ── Aggregate CPU ─────────────────────────────────────────────────────
         double cpuPercent()  const { return this->m_cpuHistory.isEmpty() ? 0.0
@@ -77,7 +80,13 @@ class PerfDataProvider : public QObject
         double diskActivePercent(int i) const;
         double diskReadBytesPerSec(int i) const;
         double diskWriteBytesPerSec(int i) const;
+        qint64 diskCapacityBytes(int i) const;
+        qint64 diskFormattedBytes(int i) const;
+        bool diskIsSystemDisk(int i) const;
+        bool diskHasPageFile(int i) const;
         const QVector<double> &diskActiveHistory(int i) const;
+        const QVector<double> &diskReadHistory(int i) const;
+        const QVector<double> &diskWriteHistory(int i) const;
 
     signals:
         void updated();
@@ -107,10 +116,19 @@ class PerfDataProvider : public QObject
             double         activePct     { 0.0 };
             double         readBps       { 0.0 };
             double         writeBps      { 0.0 };
+            qint64         capacityBytes { 0 };
+            qint64         formattedBytes { 0 };
+            bool           isSystemDisk { false };
+            bool           hasPageFile { false };
             QVector<double> activeHistory;
+            QVector<double> readHistory;
+            QVector<double> writeHistory;
         };
 
         QTimer *m_timer;
+        int     m_intervalMs { 1000 };
+        bool    m_active { true };
+        bool    m_processStatsEnabled { false };
 
         // Aggregate CPU state
         quint64          m_prevCpuIdle   { 0 };

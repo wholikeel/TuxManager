@@ -30,7 +30,15 @@ PerformanceWidget::PerformanceWidget(QWidget *parent)
     connect(this->m_provider, &Perf::PerfDataProvider::updated,
             this, &PerformanceWidget::onProviderUpdated);
 
-    this->onProviderUpdated();
+    // Expensive process/thread counting is only needed for CPU detail page.
+    connect(this->m_sidePanel, &Perf::SidePanel::currentChanged,
+            this, [this](int index)
+    {
+        this->m_provider->setProcessStatsEnabled(index == PanelCpu);
+    });
+    this->m_provider->setProcessStatsEnabled(this->m_sidePanel->currentIndex() == PanelCpu);
+
+    this->setActive(false);
 
     LOG_DEBUG("PerformanceWidget initialised");
 }
@@ -138,4 +146,15 @@ void PerformanceWidget::onProviderUpdated()
                                 .arg(QString::number(this->m_provider->diskActivePercent(i), 'f', 0) + "%");
         item->update(diskSub, this->m_provider->diskActiveHistory(i));
     }
+}
+
+void PerformanceWidget::setActive(bool active)
+{
+    if (this->m_active == active)
+        return;
+
+    this->m_active = active;
+    this->m_provider->setActive(active);
+    if (active)
+        this->onProviderUpdated();
 }

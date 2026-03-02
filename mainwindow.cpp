@@ -22,9 +22,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     if (!CFG->WindowState.isEmpty())
         this->restoreState(CFG->WindowState);
     this->ui->tabWidget->setCurrentIndex(CFG->ActiveTab);
+    this->updateTabActivity(this->ui->tabWidget->currentIndex());
 
     // Keep ActiveTab in sync as the user switches tabs
-    connect(this->ui->tabWidget, &QTabWidget::currentChanged, this, [](int index) { CFG->ActiveTab = index; });
+    connect(this->ui->tabWidget, &QTabWidget::currentChanged, this, [this](int index)
+    {
+        CFG->ActiveTab = index;
+        this->updateTabActivity(index);
+    });
 }
 
 MainWindow::~MainWindow()
@@ -38,4 +43,11 @@ void MainWindow::closeEvent(QCloseEvent *event)
     CFG->WindowState    = this->saveState();
     CFG->Save();
     QMainWindow::closeEvent(event);
+}
+
+void MainWindow::updateTabActivity(int index)
+{
+    // Tabs: 0=Processes, 1=Performance, 2=Users, 3=Services
+    this->m_processesWidget->setActive(index == 0);
+    this->m_performanceWidget->setActive(index == 1);
 }

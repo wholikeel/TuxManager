@@ -22,6 +22,8 @@ class ProcessesWidget : public QWidget
     public:
         explicit ProcessesWidget(QWidget *parent = nullptr);
         ~ProcessesWidget();
+        void setActive(bool active);
+        bool isActive() const { return this->m_active; }
 
     private slots:
         void onTimerTick();
@@ -35,6 +37,7 @@ class ProcessesWidget : public QWidget
         Os::ProcessModel         *m_model;
         Os::ProcessFilterProxy   *m_proxy;
         QTimer                   *m_refreshTimer;
+        bool                      m_active { false };
 
         void setupTable();
         void setupRefreshCombo();

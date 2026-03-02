@@ -27,6 +27,8 @@ class MainWindow : public QMainWindow
         void closeEvent(QCloseEvent *event) override;
 
     private:
+        void updateTabActivity(int index);
+
         Ui::MainWindow *ui;
 
         ProcessesWidget   *m_processesWidget;

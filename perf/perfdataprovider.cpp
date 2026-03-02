@@ -9,6 +9,7 @@
 #include <QHash>
 #include <QRegularExpression>
 #include <QStringList>
+#include <sys/statvfs.h>
 #include <unistd.h>
 
 namespace Perf
@@ -29,14 +30,40 @@ PerfDataProvider::PerfDataProvider(QObject *parent)
     this->sampleCpu();
     this->sampleMemory();
     this->sampleDisks();
-    this->sampleProcessStats();
+    if (this->m_processStatsEnabled)
+        this->sampleProcessStats();
 
     this->m_timer->start(1000);
 }
 
 void PerfDataProvider::setInterval(int ms)
 {
-    this->m_timer->setInterval(ms);
+    this->m_intervalMs = qMax(100, ms);
+    this->m_timer->setInterval(this->m_intervalMs);
+}
+
+void PerfDataProvider::setActive(bool active)
+{
+    if (this->m_active == active)
+        return;
+
+    this->m_active = active;
+    if (active)
+    {
+        // Refresh once immediately when entering Performance tab.
+        this->sampleCpu();
+        this->sampleMemory();
+        this->sampleDisks();
+        if (this->m_processStatsEnabled)
+            this->sampleProcessStats();
+        this->readCurrentFreq();
+        emit this->updated();
+        this->m_timer->start(this->m_intervalMs);
+    }
+    else
+    {
+        this->m_timer->stop();
+    }
 }
 
 double PerfDataProvider::memFraction() const
@@ -113,6 +140,34 @@ double PerfDataProvider::diskWriteBytesPerSec(int i) const
     return this->m_disks.at(i).writeBps;
 }
 
+qint64 PerfDataProvider::diskCapacityBytes(int i) const
+{
+    if (i < 0 || i >= this->m_disks.size())
+        return 0;
+    return this->m_disks.at(i).capacityBytes;
+}
+
+qint64 PerfDataProvider::diskFormattedBytes(int i) const
+{
+    if (i < 0 || i >= this->m_disks.size())
+        return 0;
+    return this->m_disks.at(i).formattedBytes;
+}
+
+bool PerfDataProvider::diskIsSystemDisk(int i) const
+{
+    if (i < 0 || i >= this->m_disks.size())
+        return false;
+    return this->m_disks.at(i).isSystemDisk;
+}
+
+bool PerfDataProvider::diskHasPageFile(int i) const
+{
+    if (i < 0 || i >= this->m_disks.size())
+        return false;
+    return this->m_disks.at(i).hasPageFile;
+}
+
 const QVector<double> &PerfDataProvider::diskActiveHistory(int i) const
 {
     static const QVector<double> empty;
@@ -121,14 +176,34 @@ const QVector<double> &PerfDataProvider::diskActiveHistory(int i) const
     return this->m_disks.at(i).activeHistory;
 }
 
+const QVector<double> &PerfDataProvider::diskReadHistory(int i) const
+{
+    static const QVector<double> empty;
+    if (i < 0 || i >= this->m_disks.size())
+        return empty;
+    return this->m_disks.at(i).readHistory;
+}
+
+const QVector<double> &PerfDataProvider::diskWriteHistory(int i) const
+{
+    static const QVector<double> empty;
+    if (i < 0 || i >= this->m_disks.size())
+        return empty;
+    return this->m_disks.at(i).writeHistory;
+}
+
 // ── Private slots ─────────────────────────────────────────────────────────────
 
 void PerfDataProvider::onTimer()
 {
+    if (!this->m_active)
+        return;
+
     this->sampleCpu();
     this->sampleMemory();
     this->sampleDisks();
-    this->sampleProcessStats();
+    if (this->m_processStatsEnabled)
+        this->sampleProcessStats();
     this->readCurrentFreq();
     emit this->updated();
 }
@@ -380,6 +455,9 @@ QSet<QString> PerfDataProvider::resolveBaseBlockDevices(const QString &devName)
 void PerfDataProvider::refreshDisks(const QSet<QString> &measurableDevices)
 {
     QSet<QString> rawDevNames;
+    QHash<QString, QSet<QString>> mountPointsByRaw;
+    QHash<QString, qint64> formattedByRaw;
+    QHash<QString, bool> rawHasSwap;
 
     // Mounted filesystems
     QFile mf("/proc/self/mountinfo");
@@ -399,7 +477,23 @@ void PerfDataProvider::refreshDisks(const QSet<QString> &measurableDevices)
             const QString source = QString::fromUtf8(parts.at(sepIdx + 2));
             if (!source.startsWith("/dev/"))
                 continue;
-            rawDevNames.insert(QFileInfo(source).fileName());
+            const QString raw = QFileInfo(source).fileName();
+            rawDevNames.insert(raw);
+
+            const QString mountPoint = (parts.size() > 4) ? QString::fromUtf8(parts.at(4)) : QString();
+            if (!mountPoint.isEmpty())
+            {
+                mountPointsByRaw[raw].insert(mountPoint);
+                if (!formattedByRaw.contains(raw))
+                {
+                    struct statvfs vfs{};
+                    if (::statvfs(mountPoint.toUtf8().constData(), &vfs) == 0)
+                    {
+                        formattedByRaw.insert(raw, static_cast<qint64>(vfs.f_blocks)
+                                                    * static_cast<qint64>(vfs.f_frsize));
+                    }
+                }
+            }
         }
         mf.close();
     }
@@ -425,19 +519,34 @@ void PerfDataProvider::refreshDisks(const QSet<QString> &measurableDevices)
             const QString src = QString::fromUtf8(parts.at(0));
             if (!src.startsWith("/dev/"))
                 continue;
-            rawDevNames.insert(QFileInfo(src).fileName());
+            const QString raw = QFileInfo(src).fileName();
+            rawDevNames.insert(raw);
+            rawHasSwap.insert(raw, true);
         }
         sf.close();
     }
 
     QSet<QString> baseDevices;
+    QHash<QString, bool> systemByBase;
+    QHash<QString, bool> pageFileByBase;
+    QHash<QString, qint64> formattedByBase;
     for (const QString &raw : rawDevNames)
     {
         const QSet<QString> bases = resolveBaseBlockDevices(raw);
         for (const QString &b : bases)
         {
             if (!shouldIgnoreBlockDevice(b) && measurableDevices.contains(b))
+            {
                 baseDevices.insert(b);
+                for (const QString &mp : mountPointsByRaw.value(raw))
+                {
+                    if (mp == "/")
+                        systemByBase[b] = true;
+                }
+                if (rawHasSwap.value(raw, false))
+                    pageFileByBase[b] = true;
+                formattedByBase[b] += formattedByRaw.value(raw, 0);
+            }
         }
     }
 
@@ -454,13 +563,7 @@ void PerfDataProvider::refreshDisks(const QSet<QString> &measurableDevices)
     rebuilt.reserve(names.size());
     for (const QString &name : names)
     {
-        if (oldByName.contains(name))
-        {
-            rebuilt.append(oldByName.value(name));
-            continue;
-        }
-
-        DiskSample d;
+        DiskSample d = oldByName.value(name);
         d.name = name;
 
         const QString model = readSysTextFile(QString("/sys/class/block/%1/device/model").arg(name));
@@ -473,6 +576,12 @@ void PerfDataProvider::refreshDisks(const QSet<QString> &measurableDevices)
             d.type = "SSD";
         else
             d.type = tr("Unknown");
+
+        const qint64 sizeSecs = readSysTextFile(QString("/sys/class/block/%1/size").arg(name)).toLongLong();
+        d.capacityBytes = qMax<qint64>(0, sizeSecs) * 512LL;
+        d.formattedBytes = qMax<qint64>(0, formattedByBase.value(name, 0));
+        d.isSystemDisk = systemByBase.value(name, false);
+        d.hasPageFile = pageFileByBase.value(name, false);
 
         rebuilt.append(d);
     }
@@ -534,6 +643,8 @@ bool PerfDataProvider::sampleDisks()
             d.readBps = 0.0;
             d.writeBps = 0.0;
             appendHistory(d.activeHistory, 0.0);
+            appendHistory(d.readHistory, 0.0);
+            appendHistory(d.writeHistory, 0.0);
             continue;
         }
 
@@ -544,6 +655,8 @@ bool PerfDataProvider::sampleDisks()
             d.prevWriteSecs = c.writeSectors;
             d.prevIoMs      = c.ioMs;
             appendHistory(d.activeHistory, 0.0);
+            appendHistory(d.readHistory, 0.0);
+            appendHistory(d.writeHistory, 0.0);
             continue;
         }
 
@@ -562,6 +675,8 @@ bool PerfDataProvider::sampleDisks()
         d.writeBps = static_cast<double>(dWriteSecs) * kSectorBytes * 1000.0 / static_cast<double>(dtMs);
 
         appendHistory(d.activeHistory, d.activePct);
+        appendHistory(d.readHistory, d.readBps);
+        appendHistory(d.writeHistory, d.writeBps);
     }
 
     return true;

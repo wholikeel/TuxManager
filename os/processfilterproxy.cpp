@@ -15,7 +15,7 @@ ProcessFilterProxy::ProcessFilterProxy(QObject *parent)
     this->setFilterKeyColumn(-1); // search across all columns
 }
 
-void ProcessFilterProxy::applyFilters()
+void ProcessFilterProxy::ApplyFilters()
 {
     this->invalidateFilter();
 }

@@ -12,6 +12,7 @@ ProcessModel::ProcessModel(QObject *parent) : QAbstractTableModel(parent)
     this->m_numCpus = static_cast<int>(sysconf(_SC_NPROCESSORS_ONLN));
     if (this->m_numCpus < 1)
         this->m_numCpus = 1;
+    this->m_myUid = ::getuid();
 }
 
 // ── QAbstractTableModel interface ─────────────────────────────────────────────
@@ -125,7 +126,11 @@ void ProcessModel::Refresh()
         (this->m_prevCpuTotalTicks > 0 && totalJiffies > this->m_prevCpuTotalTicks)
         ? (totalJiffies - this->m_prevCpuTotalTicks) : 0;
 
-    QList<Process> fresh = Process::loadAll();
+    Process::LoadOptions opts;
+    opts.includeKernelTasks = this->m_showKernelTasks;
+    opts.includeOtherUsers  = this->m_showOtherUsersProcs;
+    opts.myUid              = this->m_myUid;
+    QList<Process> fresh = Process::loadAll(opts);
 
     // Calculate CPU% per process: (delta process ticks) / (period per CPU) * 100
     if (periodJiffies > 0)

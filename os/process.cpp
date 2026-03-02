@@ -30,7 +30,7 @@ QString Process::stateString(char state)
 
 // ── Private: load a single process ───────────────────────────────────────────
 
-bool Process::loadOne(pid_t pid, Process &out)
+bool Process::loadOneStatAndUid(pid_t pid, Process &out)
 {
     out.pid = pid;
 
@@ -92,35 +92,43 @@ bool Process::loadOne(pid_t pid, Process &out)
             out.uid = st.st_uid;
     }
 
+    return true;
+}
+
+void Process::loadUserAndCmdline(Process &proc)
+{
     // Resolve uid → username (getpwuid is not thread-safe but fine here)
-    const struct passwd *pw = getpwuid(out.uid);
-    out.user = pw ? QString::fromUtf8(pw->pw_name) : QString::number(out.uid);
+    const struct passwd *pw = getpwuid(proc.uid);
+    proc.user = pw ? QString::fromUtf8(pw->pw_name) : QString::number(proc.uid);
 
     // ── /proc/pid/cmdline ────────────────────────────────────────────────────
     // Kernel threads have no cmdline; use bracketed name as display string.
-    if (out.isKernelThread)
+    if (proc.isKernelThread)
     {
-        out.cmdline = "[" + out.name + "]";
+        proc.cmdline = "[" + proc.name + "]";
+        return;
     }
-    else
+
+    QFile cmdFile(QString("/proc/%1/cmdline").arg(proc.pid));
+    if (cmdFile.open(QIODevice::ReadOnly))
     {
-        QFile cmdFile(QString("/proc/%1/cmdline").arg(pid));
-        if (cmdFile.open(QIODevice::ReadOnly))
-        {
-            QByteArray data = cmdFile.readAll();
-            cmdFile.close();
-            data.replace('\0', ' ');
-            out.cmdline = QString::fromUtf8(data).trimmed();
-        }
-        if (out.cmdline.isEmpty())
-            out.cmdline = out.name; // fallback: use comm name
+        QByteArray data = cmdFile.readAll();
+        cmdFile.close();
+        data.replace('\0', ' ');
+        proc.cmdline = QString::fromUtf8(data).trimmed();
     }
-    return true;
+    if (proc.cmdline.isEmpty())
+        proc.cmdline = proc.name; // fallback: use comm name
 }
 
 // ── Public: load all processes ────────────────────────────────────────────────
 
 QList<Process> Process::loadAll()
+{
+    return Process::loadAll(LoadOptions{});
+}
+
+QList<Process> Process::loadAll(const LoadOptions &options)
 {
     QList<Process> list;
 
@@ -137,8 +145,17 @@ QList<Process> Process::loadAll()
             continue;
 
         Process proc;
-        if (loadOne(pid, proc))
-            list.append(proc);
+        if (!loadOneStatAndUid(pid, proc))
+            continue;
+
+        // Fast prefilter on fields available from stat + proc dir ownership.
+        if (!options.includeKernelTasks && proc.isKernelThread)
+            continue;
+        if (!options.includeOtherUsers && proc.uid != options.myUid)
+            continue;
+
+        loadUserAndCmdline(proc);
+        list.append(proc);
     }
 
     return list;
