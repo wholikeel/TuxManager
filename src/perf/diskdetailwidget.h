@@ -19,8 +19,8 @@ namespace Perf
             explicit DiskDetailWidget(QWidget *parent = nullptr);
             ~DiskDetailWidget();
 
-            void setProvider(PerfDataProvider *provider);
-            void setDiskIndex(int index);
+            void SetProvider(PerfDataProvider *provider);
+            void SetDiskIndex(int index);
 
         private slots:
             void onUpdated();

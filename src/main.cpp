@@ -5,6 +5,7 @@
 #include <QApplication>
 #include <QCommandLineParser>
 #include <QCommandLineOption>
+#include <QIcon>
 #include <cstdio>
 #include <cstring>
 
@@ -51,6 +52,7 @@ int main(int argc, char *argv[])
     a.setOrganizationName(kAppName);
     a.setApplicationName(kAppName);
     a.setApplicationVersion(kVersion);
+    a.setWindowIcon(QIcon(":/app_icon.ico"));
 
     // ── Command-line parsing (remaining options) ──────────────────────────────
     QCommandLineParser parser;

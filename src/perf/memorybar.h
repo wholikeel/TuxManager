@@ -25,8 +25,7 @@ namespace Perf
             explicit MemoryBar(QWidget *parent = nullptr);
 
             /// Update all segment values. @p cached includes @p dirty (dirty is its subset).
-            void setSegments(qint64 used, qint64 dirty, qint64 cached,
-                             qint64 free, qint64 total);
+            void SetSegments(qint64 used, qint64 dirty, qint64 cached, qint64 free, qint64 total);
 
             QSize sizeHint()        const override { return QSize(400, 22); }
             QSize minimumSizeHint() const override { return QSize(80,  12); }

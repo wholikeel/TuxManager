@@ -10,8 +10,7 @@
 namespace Perf
 {
 
-GpuDetailWidget::GpuDetailWidget(QWidget *parent)
-    : QWidget(parent)
+GpuDetailWidget::GpuDetailWidget(QWidget *parent) : QWidget(parent)
 {
     this->m_selectedEngineBySlot = CFG->GpuEngineSelectorIndices;
     while (this->m_selectedEngineBySlot.size() < 4)
@@ -187,7 +186,7 @@ GpuDetailWidget::GpuDetailWidget(QWidget *parent)
     root->addLayout(stats);
 }
 
-void GpuDetailWidget::setProvider(PerfDataProvider *provider)
+void GpuDetailWidget::SetProvider(PerfDataProvider *provider)
 {
     if (this->m_provider)
         disconnect(this->m_provider, &PerfDataProvider::updated,
@@ -202,7 +201,7 @@ void GpuDetailWidget::setProvider(PerfDataProvider *provider)
     }
 }
 
-void GpuDetailWidget::setGpuIndex(int index)
+void GpuDetailWidget::SetGpuIndex(int index)
 {
     this->m_gpuIndex = index;
     this->rebuildEngineSelectors();
@@ -228,10 +227,10 @@ void GpuDetailWidget::onEngineSelectionChanged(int slot, int comboIndex)
 
 void GpuDetailWidget::rebuildEngineSelectors()
 {
-    if (!this->m_provider || this->m_gpuIndex < 0 || this->m_gpuIndex >= this->m_provider->gpuCount())
+    if (!this->m_provider || this->m_gpuIndex < 0 || this->m_gpuIndex >= this->m_provider->GpuCount())
         return;
 
-    const int engineCount = this->m_provider->gpuEngineCount(this->m_gpuIndex);
+    const int engineCount = this->m_provider->GpuEngineCount(this->m_gpuIndex);
     for (int slot = 0; slot < this->m_engineSelectors.size(); ++slot)
     {
         QComboBox *combo = this->m_engineSelectors.at(slot);
@@ -242,7 +241,7 @@ void GpuDetailWidget::rebuildEngineSelectors()
         combo->clear();
 
         for (int i = 0; i < engineCount; ++i)
-            combo->addItem(this->m_provider->gpuEngineName(this->m_gpuIndex, i), i);
+            combo->addItem(this->m_provider->GpuEngineName(this->m_gpuIndex, i), i);
 
         int engineIndex = this->m_selectedEngineBySlot[slot];
         if (engineIndex < 0 || engineIndex >= engineCount)
@@ -259,19 +258,19 @@ void GpuDetailWidget::rebuildEngineSelectors()
 
 void GpuDetailWidget::onUpdated()
 {
-    if (!this->m_provider || this->m_gpuIndex < 0 || this->m_gpuIndex >= this->m_provider->gpuCount())
+    if (!this->m_provider || this->m_gpuIndex < 0 || this->m_gpuIndex >= this->m_provider->GpuCount())
         return;
 
     this->m_titleLabel->setText(tr("GPU %1").arg(this->m_gpuIndex));
-    this->m_modelLabel->setText(this->m_provider->gpuName(this->m_gpuIndex));
+    this->m_modelLabel->setText(this->m_provider->GpuName(this->m_gpuIndex));
 
-    const double util = this->m_provider->gpuUtilPercent(this->m_gpuIndex);
-    const qint64 dedicatedUsedMiB = this->m_provider->gpuMemUsedMiB(this->m_gpuIndex);
-    const qint64 dedicatedTotalMiB = this->m_provider->gpuMemTotalMiB(this->m_gpuIndex);
+    const double util = this->m_provider->GpuUtilPercent(this->m_gpuIndex);
+    const qint64 dedicatedUsedMiB = this->m_provider->GpuMemUsedMiB(this->m_gpuIndex);
+    const qint64 dedicatedTotalMiB = this->m_provider->GpuMemTotalMiB(this->m_gpuIndex);
 
     // Best-effort approximation used by task-manager-like UIs on Linux where
     // shared GPU accounting is usually not exposed by common tooling.
-    const qint64 sharedTotalMiB = qMax<qint64>(0, this->m_provider->memTotalKb() / 1024 / 2);
+    const qint64 sharedTotalMiB = qMax<qint64>(0, this->m_provider->MemTotalKb() / 1024 / 2);
     const qint64 sharedUsedMiB = 0;
 
     this->m_sharedMemHistory.append(0.0);
@@ -291,8 +290,8 @@ void GpuDetailWidget::onUpdated()
     this->m_sharedMemValueLabel->setText(tr("%1 / %2")
                                          .arg(formatMemMib(sharedUsedMiB))
                                          .arg(formatMemMib(sharedTotalMiB)));
-    this->m_driverValueLabel->setText(this->m_provider->gpuDriverVersion(this->m_gpuIndex));
-    this->m_backendValueLabel->setText(this->m_provider->gpuBackendName(this->m_gpuIndex));
+    this->m_driverValueLabel->setText(this->m_provider->GpuDriverVersion(this->m_gpuIndex));
+    this->m_backendValueLabel->setText(this->m_provider->GpuBackendName(this->m_gpuIndex));
 
     this->rebuildEngineSelectors();
 
@@ -306,10 +305,10 @@ void GpuDetailWidget::onUpdated()
 
         if (engineIndex >= 0)
         {
-            const QString engName = this->m_provider->gpuEngineName(this->m_gpuIndex, engineIndex);
+            const QString engName = this->m_provider->GpuEngineName(this->m_gpuIndex, engineIndex);
             graph->setSeriesNames(engName);
-            graph->setHistory(this->m_provider->gpuEngineHistory(this->m_gpuIndex, engineIndex), 100.0);
-            value->setText(QString::number(this->m_provider->gpuEnginePercent(this->m_gpuIndex, engineIndex), 'f', 0) + "%");
+            graph->setHistory(this->m_provider->GpuEngineHistory(this->m_gpuIndex, engineIndex), 100.0);
+            value->setText(QString::number(this->m_provider->GpuEnginePercent(this->m_gpuIndex, engineIndex), 'f', 0) + "%");
         } else
         {
             graph->setHistory(QVector<double>(), 100.0);
@@ -317,14 +316,14 @@ void GpuDetailWidget::onUpdated()
         }
     }
 
-    this->m_dedicatedMemGraph->setHistory(this->m_provider->gpuMemUsageHistory(this->m_gpuIndex), 100.0);
+    this->m_dedicatedMemGraph->setHistory(this->m_provider->GpuMemUsageHistory(this->m_gpuIndex), 100.0);
     this->m_dedicatedMemGraphMaxLabel->setText(formatMemMib(dedicatedTotalMiB));
 
     this->m_sharedMemGraph->setHistory(this->m_sharedMemHistory, 100.0);
     this->m_sharedMemGraphMaxLabel->setText(formatMemMib(sharedTotalMiB));
 
-    const QVector<double> &txHistory = this->m_provider->gpuCopyTxHistory(this->m_gpuIndex);
-    const QVector<double> &rxHistory = this->m_provider->gpuCopyRxHistory(this->m_gpuIndex);
+    const QVector<double> &txHistory = this->m_provider->GpuCopyTxHistory(this->m_gpuIndex);
+    const QVector<double> &rxHistory = this->m_provider->GpuCopyRxHistory(this->m_gpuIndex);
     double maxCopyRate = 1024.0;
     for (double v : txHistory)
         maxCopyRate = std::max(maxCopyRate, v);

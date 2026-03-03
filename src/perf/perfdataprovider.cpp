@@ -66,9 +66,7 @@ FnNvmlDeviceGetPcieThroughput pNvmlDeviceGetPcieThroughput = nullptr;
 
 // ── Construction ──────────────────────────────────────────────────────────────
 
-PerfDataProvider::PerfDataProvider(QObject *parent)
-    : QObject(parent)
-    , m_timer(new QTimer(this))
+PerfDataProvider::PerfDataProvider(QObject *parent) : QObject(parent), m_timer(new QTimer(this))
 {
     connect(this->m_timer, &QTimer::timeout, this, &PerfDataProvider::onTimer);
 
@@ -92,13 +90,13 @@ PerfDataProvider::~PerfDataProvider()
     this->unloadGpuBackends();
 }
 
-void PerfDataProvider::setInterval(int ms)
+void PerfDataProvider::SetInterval(int ms)
 {
     this->m_intervalMs = qMax(100, ms);
     this->m_timer->setInterval(this->m_intervalMs);
 }
 
-void PerfDataProvider::setActive(bool active)
+void PerfDataProvider::SetActive(bool active)
 {
     if (this->m_active == active)
         return;
@@ -123,7 +121,7 @@ void PerfDataProvider::setActive(bool active)
     }
 }
 
-double PerfDataProvider::memFraction() const
+double PerfDataProvider::MemFraction() const
 {
     if (this->m_memTotalKb <= 0)
         return 0.0;
@@ -131,7 +129,7 @@ double PerfDataProvider::memFraction() const
            / static_cast<double>(this->m_memTotalKb);
 }
 
-double PerfDataProvider::corePercent(int i) const
+double PerfDataProvider::CorePercent(int i) const
 {
     if (i < 0 || i >= this->m_cores.size())
         return 0.0;
@@ -139,7 +137,7 @@ double PerfDataProvider::corePercent(int i) const
     return c.history.isEmpty() ? 0.0 : c.history.last();
 }
 
-const QVector<double> &PerfDataProvider::coreHistory(int i) const
+const QVector<double> &PerfDataProvider::CoreHistory(int i) const
 {
     static const QVector<double> empty;
     if (i < 0 || i >= this->m_cores.size())
@@ -147,7 +145,7 @@ const QVector<double> &PerfDataProvider::coreHistory(int i) const
     return this->m_cores.at(i).history;
 }
 
-const QVector<double> &PerfDataProvider::coreKernelHistory(int i) const
+const QVector<double> &PerfDataProvider::CoreKernelHistory(int i) const
 {
     static const QVector<double> empty;
     if (i < 0 || i >= this->m_cores.size())
@@ -155,77 +153,77 @@ const QVector<double> &PerfDataProvider::coreKernelHistory(int i) const
     return this->m_cores.at(i).kernelHistory;
 }
 
-QString PerfDataProvider::diskName(int i) const
+QString PerfDataProvider::DiskName(int i) const
 {
     if (i < 0 || i >= this->m_disks.size())
         return {};
     return this->m_disks.at(i).name;
 }
 
-QString PerfDataProvider::diskModel(int i) const
+QString PerfDataProvider::DiskModel(int i) const
 {
     if (i < 0 || i >= this->m_disks.size())
         return {};
     return this->m_disks.at(i).model;
 }
 
-QString PerfDataProvider::diskType(int i) const
+QString PerfDataProvider::DiskType(int i) const
 {
     if (i < 0 || i >= this->m_disks.size())
         return {};
     return this->m_disks.at(i).type;
 }
 
-double PerfDataProvider::diskActivePercent(int i) const
+double PerfDataProvider::DiskActivePercent(int i) const
 {
     if (i < 0 || i >= this->m_disks.size())
         return 0.0;
     return this->m_disks.at(i).activePct;
 }
 
-double PerfDataProvider::diskReadBytesPerSec(int i) const
+double PerfDataProvider::DiskReadBytesPerSec(int i) const
 {
     if (i < 0 || i >= this->m_disks.size())
         return 0.0;
     return this->m_disks.at(i).readBps;
 }
 
-double PerfDataProvider::diskWriteBytesPerSec(int i) const
+double PerfDataProvider::DiskWriteBytesPerSec(int i) const
 {
     if (i < 0 || i >= this->m_disks.size())
         return 0.0;
     return this->m_disks.at(i).writeBps;
 }
 
-qint64 PerfDataProvider::diskCapacityBytes(int i) const
+qint64 PerfDataProvider::DiskCapacityBytes(int i) const
 {
     if (i < 0 || i >= this->m_disks.size())
         return 0;
     return this->m_disks.at(i).capacityBytes;
 }
 
-qint64 PerfDataProvider::diskFormattedBytes(int i) const
+qint64 PerfDataProvider::DiskFormattedBytes(int i) const
 {
     if (i < 0 || i >= this->m_disks.size())
         return 0;
     return this->m_disks.at(i).formattedBytes;
 }
 
-bool PerfDataProvider::diskIsSystemDisk(int i) const
+bool PerfDataProvider::DiskIsSystemDisk(int i) const
 {
     if (i < 0 || i >= this->m_disks.size())
         return false;
     return this->m_disks.at(i).isSystemDisk;
 }
 
-bool PerfDataProvider::diskHasPageFile(int i) const
+bool PerfDataProvider::DiskHasPageFile(int i) const
 {
     if (i < 0 || i >= this->m_disks.size())
         return false;
     return this->m_disks.at(i).hasPageFile;
 }
 
-const QVector<double> &PerfDataProvider::diskActiveHistory(int i) const
+const QVector<double> &PerfDataProvider::DiskActiveHistory(int i) const
 {
     static const QVector<double> empty;
     if (i < 0 || i >= this->m_disks.size())
@@ -233,7 +231,7 @@ const QVector<double> &PerfDataProvider::diskActiveHistory(int i) const
     return this->m_disks.at(i).activeHistory;
 }
 
-const QVector<double> &PerfDataProvider::diskReadHistory(int i) const
+const QVector<double> &PerfDataProvider::DiskReadHistory(int i) const
 {
     static const QVector<double> empty;
     if (i < 0 || i >= this->m_disks.size())
@@ -241,7 +239,7 @@ const QVector<double> &PerfDataProvider::diskReadHistory(int i) const
     return this->m_disks.at(i).readHistory;
 }
 
-const QVector<double> &PerfDataProvider::diskWriteHistory(int i) const
+const QVector<double> &PerfDataProvider::DiskWriteHistory(int i) const
 {
     static const QVector<double> empty;
     if (i < 0 || i >= this->m_disks.size())
@@ -249,49 +247,49 @@ const QVector<double> &PerfDataProvider::diskWriteHistory(int i) const
     return this->m_disks.at(i).writeHistory;
 }
 
-QString PerfDataProvider::gpuName(int i) const
+QString PerfDataProvider::GpuName(int i) const
 {
     if (i < 0 || i >= this->m_gpus.size())
         return {};
     return this->m_gpus.at(i).name;
 }
 
-QString PerfDataProvider::gpuDriverVersion(int i) const
+QString PerfDataProvider::GpuDriverVersion(int i) const
 {
     if (i < 0 || i >= this->m_gpus.size())
         return {};
     return this->m_gpus.at(i).driverVersion;
 }
 
-QString PerfDataProvider::gpuBackendName(int i) const
+QString PerfDataProvider::GpuBackendName(int i) const
 {
     if (i < 0 || i >= this->m_gpus.size())
         return {};
     return this->m_gpus.at(i).backend;
 }
 
-double PerfDataProvider::gpuUtilPercent(int i) const
+double PerfDataProvider::GpuUtilPercent(int i) const
 {
     if (i < 0 || i >= this->m_gpus.size())
         return 0.0;
     return this->m_gpus.at(i).utilPct;
 }
 
-qint64 PerfDataProvider::gpuMemUsedMiB(int i) const
+qint64 PerfDataProvider::GpuMemUsedMiB(int i) const
 {
     if (i < 0 || i >= this->m_gpus.size())
         return 0;
     return this->m_gpus.at(i).memUsedMiB;
 }
 
-qint64 PerfDataProvider::gpuMemTotalMiB(int i) const
+qint64 PerfDataProvider::GpuMemTotalMiB(int i) const
 {
     if (i < 0 || i >= this->m_gpus.size())
         return 0;
     return this->m_gpus.at(i).memTotalMiB;
 }
 
-const QVector<double> &PerfDataProvider::gpuUtilHistory(int i) const
+const QVector<double> &PerfDataProvider::GpuUtilHistory(int i) const
 {
     static const QVector<double> empty;
     if (i < 0 || i >= this->m_gpus.size())
@@ -299,7 +297,7 @@ const QVector<double> &PerfDataProvider::gpuUtilHistory(int i) const
     return this->m_gpus.at(i).utilHistory;
 }
 
-const QVector<double> &PerfDataProvider::gpuMemUsageHistory(int i) const
+const QVector<double> &PerfDataProvider::GpuMemUsageHistory(int i) const
 {
     static const QVector<double> empty;
     if (i < 0 || i >= this->m_gpus.size())
@@ -307,7 +305,7 @@ const QVector<double> &PerfDataProvider::gpuMemUsageHistory(int i) const
     return this->m_gpus.at(i).memUsageHistory;
 }
 
-const QVector<double> &PerfDataProvider::gpuCopyTxHistory(int i) const
+const QVector<double> &PerfDataProvider::GpuCopyTxHistory(int i) const
 {
     static const QVector<double> empty;
     if (i < 0 || i >= this->m_gpus.size())
@@ -315,7 +313,7 @@ const QVector<double> &PerfDataProvider::gpuCopyTxHistory(int i) const
     return this->m_gpus.at(i).copyTxHistory;
 }
 
-const QVector<double> &PerfDataProvider::gpuCopyRxHistory(int i) const
+const QVector<double> &PerfDataProvider::GpuCopyRxHistory(int i) const
 {
     static const QVector<double> empty;
     if (i < 0 || i >= this->m_gpus.size())
@@ -323,14 +321,14 @@ const QVector<double> &PerfDataProvider::gpuCopyRxHistory(int i) const
     return this->m_gpus.at(i).copyRxHistory;
 }
 
-int PerfDataProvider::gpuEngineCount(int gpuIndex) const
+int PerfDataProvider::GpuEngineCount(int gpuIndex) const
 {
     if (gpuIndex < 0 || gpuIndex >= this->m_gpus.size())
         return 0;
     return this->m_gpus.at(gpuIndex).engines.size();
 }
 
-QString PerfDataProvider::gpuEngineName(int gpuIndex, int engineIndex) const
+QString PerfDataProvider::GpuEngineName(int gpuIndex, int engineIndex) const
 {
     if (gpuIndex < 0 || gpuIndex >= this->m_gpus.size())
         return {};
@@ -340,7 +338,7 @@ QString PerfDataProvider::gpuEngineName(int gpuIndex, int engineIndex) const
     return engines.at(engineIndex).label;
 }
 
-double PerfDataProvider::gpuEnginePercent(int gpuIndex, int engineIndex) const
+double PerfDataProvider::GpuEnginePercent(int gpuIndex, int engineIndex) const
 {
     if (gpuIndex < 0 || gpuIndex >= this->m_gpus.size())
         return 0.0;
@@ -350,7 +348,7 @@ double PerfDataProvider::gpuEnginePercent(int gpuIndex, int engineIndex) const
     return engines.at(engineIndex).pct;
 }
 
-const QVector<double> &PerfDataProvider::gpuEngineHistory(int gpuIndex, int engineIndex) const
+const QVector<double> &PerfDataProvider::GpuEngineHistory(int gpuIndex, int engineIndex) const
 {
     static const QVector<double> empty;
     if (gpuIndex < 0 || gpuIndex >= this->m_gpus.size())

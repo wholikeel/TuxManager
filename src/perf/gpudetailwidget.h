@@ -18,8 +18,8 @@ namespace Perf
         public:
             explicit GpuDetailWidget(QWidget *parent = nullptr);
 
-            void setProvider(PerfDataProvider *provider);
-            void setGpuIndex(int index);
+            void SetProvider(PerfDataProvider *provider);
+            void SetGpuIndex(int index);
 
         private slots:
             void onUpdated();

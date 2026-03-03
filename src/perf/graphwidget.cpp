@@ -10,8 +10,7 @@
 namespace Perf
 {
 
-GraphWidget::GraphWidget(QWidget *parent)
-    : QWidget(parent)
+GraphWidget::GraphWidget(QWidget *parent) : QWidget(parent)
 {
     this->setAutoFillBackground(false);
     this->setMouseTracking(true);

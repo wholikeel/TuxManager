@@ -8,12 +8,9 @@
 #include <QStackedWidget>
 #include <QVBoxLayout>
 
-namespace Perf
-{
+using namespace Perf;
 
-CpuGraphArea::CpuGraphArea(QWidget *parent)
-    : QWidget(parent)
-    , m_stack(new QStackedWidget(this))
+CpuGraphArea::CpuGraphArea(QWidget *parent) : QWidget(parent), m_stack(new QStackedWidget(this))
 {
     // Page 0 — single aggregate graph
     this->m_overallGraph = new GraphWidget(this->m_stack);
@@ -70,22 +67,22 @@ void CpuGraphArea::updateData(const PerfDataProvider *provider)
         return;
 
     // ── Aggregate graph ───────────────────────────────────────────────────────
-    this->m_overallGraph->setHistory(provider->cpuHistory());
+    this->m_overallGraph->setHistory(provider->CpuHistory());
     if (this->m_showKernelTime)
-        this->m_overallGraph->setSecondaryHistory(provider->cpuKernelHistory());
+        this->m_overallGraph->setSecondaryHistory(provider->CpuKernelHistory());
     else
         this->m_overallGraph->setSecondaryHistory({});
 
     // ── Per-core grid ─────────────────────────────────────────────────────────
-    const int cores = provider->coreCount();
+    const int cores = provider->CoreCount();
     if (cores > 0)
     {
         this->ensureCoreGraphs(cores);
         for (int i = 0; i < cores; ++i)
         {
-            this->m_coreGraphs.at(i)->setHistory(provider->coreHistory(i));
+            this->m_coreGraphs.at(i)->setHistory(provider->CoreHistory(i));
             if (this->m_showKernelTime)
-                this->m_coreGraphs.at(i)->setSecondaryHistory(provider->coreKernelHistory(i));
+                this->m_coreGraphs.at(i)->setSecondaryHistory(provider->CoreKernelHistory(i));
             else
                 this->m_coreGraphs.at(i)->setSecondaryHistory({});
         }
@@ -146,4 +143,3 @@ void CpuGraphArea::ensureCoreGraphs(int count)
     this->m_perCoreContainer->updateGeometry();
 }
 
-} // namespace Perf

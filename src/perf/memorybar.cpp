@@ -23,7 +23,7 @@ MemoryBar::MemoryBar(QWidget *parent) : QWidget(parent)
     this->setMouseTracking(true);
 }
 
-void MemoryBar::setSegments(qint64 used, qint64 dirty, qint64 cached, qint64 free, qint64 total)
+void MemoryBar::SetSegments(qint64 used, qint64 dirty, qint64 cached, qint64 free, qint64 total)
 {
     this->m_used   = qMax(0LL, used);
     this->m_dirty  = qMax(0LL, dirty);
@@ -137,18 +137,15 @@ QString MemoryBar::segmentTooltip(Segment seg) const
     {
         value = this->m_used;
         label = tr("Used");
-    }
-    else if (seg == Segment::Dirty)
+    } else if (seg == Segment::Dirty)
     {
         value = this->m_dirty;
         label = tr("Dirty");
-    }
-    else if (seg == Segment::Cached)
+    } else if (seg == Segment::Cached)
     {
         value = qMax(0LL, this->m_cached - this->m_dirty);
-        label = tr("Cached (clean)");
-    }
-    else if (seg == Segment::Free)
+        label = tr("Free (cached)");
+    } else if (seg == Segment::Free)
     {
         value = this->m_free;
         label = tr("Free");

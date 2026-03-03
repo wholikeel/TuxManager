@@ -6,9 +6,7 @@
 namespace Perf
 {
 
-DiskDetailWidget::DiskDetailWidget(QWidget *parent)
-    : QWidget(parent)
-    , ui(new Ui::DiskDetailWidget)
+DiskDetailWidget::DiskDetailWidget(QWidget *parent) : QWidget(parent), ui(new Ui::DiskDetailWidget)
 {
     this->ui->setupUi(this);
 
@@ -36,7 +34,7 @@ DiskDetailWidget::~DiskDetailWidget()
     delete this->ui;
 }
 
-void DiskDetailWidget::setProvider(PerfDataProvider *provider)
+void DiskDetailWidget::SetProvider(PerfDataProvider *provider)
 {
     if (this->m_provider)
         disconnect(this->m_provider, &PerfDataProvider::updated,
@@ -52,7 +50,7 @@ void DiskDetailWidget::setProvider(PerfDataProvider *provider)
     }
 }
 
-void DiskDetailWidget::setDiskIndex(int index)
+void DiskDetailWidget::SetDiskIndex(int index)
 {
     this->m_diskIndex = index;
     this->onUpdated();
@@ -60,22 +58,22 @@ void DiskDetailWidget::setDiskIndex(int index)
 
 void DiskDetailWidget::onUpdated()
 {
-    if (!this->m_provider || this->m_diskIndex < 0 || this->m_diskIndex >= this->m_provider->diskCount())
+    if (!this->m_provider || this->m_diskIndex < 0 || this->m_diskIndex >= this->m_provider->DiskCount())
         return;
 
-    const QString name = this->m_provider->diskName(this->m_diskIndex);
-    const QString model = this->m_provider->diskModel(this->m_diskIndex);
-    const QString type = this->m_provider->diskType(this->m_diskIndex);
-    const double active = this->m_provider->diskActivePercent(this->m_diskIndex);
-    const double readBps = this->m_provider->diskReadBytesPerSec(this->m_diskIndex);
-    const double writeBps = this->m_provider->diskWriteBytesPerSec(this->m_diskIndex);
-    const qint64 capacityBytes = this->m_provider->diskCapacityBytes(this->m_diskIndex);
-    const qint64 formattedBytes = this->m_provider->diskFormattedBytes(this->m_diskIndex);
-    const bool isSystemDisk = this->m_provider->diskIsSystemDisk(this->m_diskIndex);
-    const bool hasPageFile = this->m_provider->diskHasPageFile(this->m_diskIndex);
-    const QVector<double> &activeHistory = this->m_provider->diskActiveHistory(this->m_diskIndex);
-    const QVector<double> &readHistory = this->m_provider->diskReadHistory(this->m_diskIndex);
-    const QVector<double> &writeHistory = this->m_provider->diskWriteHistory(this->m_diskIndex);
+    const QString name = this->m_provider->DiskName(this->m_diskIndex);
+    const QString model = this->m_provider->DiskModel(this->m_diskIndex);
+    const QString type = this->m_provider->DiskType(this->m_diskIndex);
+    const double active = this->m_provider->DiskActivePercent(this->m_diskIndex);
+    const double readBps = this->m_provider->DiskReadBytesPerSec(this->m_diskIndex);
+    const double writeBps = this->m_provider->DiskWriteBytesPerSec(this->m_diskIndex);
+    const qint64 capacityBytes = this->m_provider->DiskCapacityBytes(this->m_diskIndex);
+    const qint64 formattedBytes = this->m_provider->DiskFormattedBytes(this->m_diskIndex);
+    const bool isSystemDisk = this->m_provider->DiskIsSystemDisk(this->m_diskIndex);
+    const bool hasPageFile = this->m_provider->DiskHasPageFile(this->m_diskIndex);
+    const QVector<double> &activeHistory = this->m_provider->DiskActiveHistory(this->m_diskIndex);
+    const QVector<double> &readHistory = this->m_provider->DiskReadHistory(this->m_diskIndex);
+    const QVector<double> &writeHistory = this->m_provider->DiskWriteHistory(this->m_diskIndex);
 
     this->ui->titleLabel->setText(tr("Disk (%1)").arg(name));
     this->ui->modelLabel->setText(model);

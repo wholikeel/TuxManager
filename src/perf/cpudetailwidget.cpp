@@ -9,12 +9,9 @@
 #include <QMenu>
 #include <QVBoxLayout>
 
-namespace Perf
-{
+using namespace Perf;
 
-CpuDetailWidget::CpuDetailWidget(QWidget *parent)
-    : QWidget(parent)
-    , ui(new Ui::CpuDetailWidget)
+CpuDetailWidget::CpuDetailWidget(QWidget *parent) : QWidget(parent), ui(new Ui::CpuDetailWidget)
 {
     this->ui->setupUi(this);
 
@@ -25,8 +22,7 @@ CpuDetailWidget::CpuDetailWidget(QWidget *parent)
     lay->addWidget(this->m_graphArea);
     this->ui->graphAreaContainer->setLayout(lay);
 
-    connect(this->m_graphArea, &CpuGraphArea::contextMenuRequested,
-            this, &CpuDetailWidget::onContextMenuRequested);
+    connect(this->m_graphArea, &CpuGraphArea::contextMenuRequested, this, &CpuDetailWidget::onContextMenuRequested);
 
     this->m_graphArea->setMode(
                 CFG->CpuGraphMode == 1
@@ -43,20 +39,17 @@ CpuDetailWidget::~CpuDetailWidget()
 void CpuDetailWidget::setProvider(PerfDataProvider *provider)
 {
     if (this->m_provider)
-        disconnect(this->m_provider, &PerfDataProvider::updated,
-                   this, &CpuDetailWidget::onUpdated);
+        disconnect(this->m_provider, &PerfDataProvider::updated, this, &CpuDetailWidget::onUpdated);
 
     this->m_provider = provider;
 
     if (this->m_provider)
     {
         // Populate one-time static labels from metadata
-        this->ui->modelNameLabel->setText(this->m_provider->cpuModelName());
-        this->ui->statLogicalCpusValue->setText(
-                QString::number(this->m_provider->cpuLogicalCount()));
+        this->ui->modelNameLabel->setText(this->m_provider->CpuModelName());
+        this->ui->statLogicalCpusValue->setText(QString::number(this->m_provider->CpuLogicalCount()));
 
-        connect(this->m_provider, &PerfDataProvider::updated,
-                this, &CpuDetailWidget::onUpdated);
+        connect(this->m_provider, &PerfDataProvider::updated, this, &CpuDetailWidget::onUpdated);
         this->onUpdated();
     }
 }
@@ -68,7 +61,7 @@ void CpuDetailWidget::onUpdated()
     if (!this->m_provider)
         return;
 
-    const double pct = this->m_provider->cpuPercent();
+    const double pct = this->m_provider->CpuPercent();
 
     // Header utilisation
     this->ui->utilizationLabel->setText(QString::number(pct, 'f', 0) + "%");
@@ -76,15 +69,13 @@ void CpuDetailWidget::onUpdated()
     // Stats panel
     this->ui->statUtilValue->setText(QString::number(pct, 'f', 1) + "%");
 
-    const double curMhz = this->m_provider->cpuCurrentMhz();
+    const double curMhz = this->m_provider->CpuCurrentMhz();
     if (curMhz > 0.0)
         this->ui->statSpeedValue->setText(
                 tr("%1 GHz").arg(curMhz / 1000.0, 0, 'f', 2));
 
-    this->ui->statProcessesValue->setText(
-            QString::number(this->m_provider->processCount()));
-    this->ui->statThreadsValue->setText(
-            QString::number(this->m_provider->threadCount()));
+    this->ui->statProcessesValue->setText(QString::number(this->m_provider->ProcessCount()));
+    this->ui->statThreadsValue->setText(QString::number(this->m_provider->ThreadCount()));
 
     // Uptime from /proc/uptime
     QFile f("/proc/uptime");
@@ -114,15 +105,14 @@ void CpuDetailWidget::onUpdated()
     // Update the graph area
     this->m_graphArea->updateData(this->m_provider);
 
-    if (this->m_provider->cpuIsVirtualMachine())
+    if (this->m_provider->CpuIsVirtualMachine())
     {
-        const QString vendor = this->m_provider->cpuVmVendor();
+        const QString vendor = this->m_provider->CpuVmVendor();
         if (vendor.isEmpty())
             this->ui->statVmValue->setText(tr("Yes"));
         else
             this->ui->statVmValue->setText(tr("Yes (%1)").arg(vendor));
-    }
-    else
+    } else
     {
         this->ui->statVmValue->setText(tr("No"));
     }
@@ -177,4 +167,3 @@ void CpuDetailWidget::onContextMenuRequested(const QPoint &globalPos)
     menu.exec(globalPos);
 }
 
-} // namespace Perf

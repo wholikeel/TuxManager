@@ -35,7 +35,7 @@ SidePanel::SidePanel(QWidget *parent)
     this->setMaximumWidth(200);
 }
 
-int SidePanel::addItem(SidePanelItem *item)
+int SidePanel::AddItem(SidePanelItem *item)
 {
     const int index = this->m_items.size();
     this->m_items.append(item);
@@ -46,17 +46,17 @@ int SidePanel::addItem(SidePanelItem *item)
 
     connect(item, &SidePanelItem::clicked, this, [this, index]()
     {
-        this->setCurrentIndex(index);
+        this->SetCurrentIndex(index);
     });
 
     // Auto-select the first item added
     if (index == 0)
-        this->setCurrentIndex(0);
+        this->SetCurrentIndex(0);
 
     return index;
 }
 
-void SidePanel::setCurrentIndex(int index)
+void SidePanel::SetCurrentIndex(int index)
 {
     if (index < 0 || index >= this->m_items.size())
         return;
@@ -65,15 +65,15 @@ void SidePanel::setCurrentIndex(int index)
 
     // Deselect previous
     if (this->m_currentIndex >= 0 && this->m_currentIndex < this->m_items.size())
-        this->m_items.at(this->m_currentIndex)->setSelected(false);
+        this->m_items.at(this->m_currentIndex)->SetSelected(false);
 
     this->m_currentIndex = index;
-    this->m_items.at(index)->setSelected(true);
+    this->m_items.at(index)->SetSelected(true);
 
     emit this->currentChanged(index);
 }
 
-SidePanelItem *SidePanel::itemAt(int index) const
+SidePanelItem *SidePanel::GetItemAt(int index) const
 {
     if (index < 0 || index >= this->m_items.size())
         return nullptr;

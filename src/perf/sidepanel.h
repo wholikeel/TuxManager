@@ -21,13 +21,13 @@ namespace Perf
             explicit SidePanel(QWidget *parent = nullptr);
 
             /// Add a new item to the panel; returns the assigned index (0-based).
-            int addItem(SidePanelItem *item);
+            int AddItem(SidePanelItem *item);
 
-            void setCurrentIndex(int index);
-            int  currentIndex() const { return this->m_currentIndex; }
+            void SetCurrentIndex(int index);
+            int  GetCurrentIndex() const { return this->m_currentIndex; }
 
-            SidePanelItem *itemAt(int index) const;
-            int            count() const { return this->m_items.size(); }
+            SidePanelItem *GetItemAt(int index) const;
+            int            GetCount() const { return this->m_items.size(); }
 
         signals:
             void currentChanged(int index);

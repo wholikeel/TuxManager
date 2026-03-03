@@ -9,10 +9,7 @@
 namespace Perf
 {
 
-SidePanelItem::SidePanelItem(const QString &title, QWidget *parent)
-    : QWidget(parent)
-    , m_title(title)
-    , m_graph(new GraphWidget(this))
+SidePanelItem::SidePanelItem(const QString &title, QWidget *parent) : QWidget(parent), m_title(title), m_graph(new GraphWidget(this))
 {
     this->setCursor(Qt::PointingHandCursor);
     this->setMouseTracking(true);
@@ -29,16 +26,14 @@ SidePanelItem::SidePanelItem(const QString &title, QWidget *parent)
     this->setLayout(lay);
 }
 
-void SidePanelItem::update(const QString &subtitle,
-                           const QVector<double> &history,
-                           double maxVal)
+void SidePanelItem::Update(const QString &subtitle, const QVector<double> &history, double maxVal)
 {
     this->m_subtitle = subtitle;
     this->m_graph->setHistory(history, maxVal);
     this->repaint();  // repaint own text; graph repaints itself inside setHistory
 }
 
-void SidePanelItem::setSelected(bool selected)
+void SidePanelItem::SetSelected(bool selected)
 {
     if (this->m_selected == selected)
         return;
@@ -46,7 +41,7 @@ void SidePanelItem::setSelected(bool selected)
     this->repaint();
 }
 
-void SidePanelItem::setGraphColor(QColor line, QColor fill)
+void SidePanelItem::SetGraphColor(QColor line, QColor fill)
 {
     this->m_graph->setColor(line, fill);
 }

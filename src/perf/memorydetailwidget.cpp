@@ -41,13 +41,13 @@ void MemoryDetailWidget::onUpdated()
     if (!this->m_provider)
         return;
 
-    const qint64 total   = this->m_provider->memTotalKb();
-    const qint64 used    = this->m_provider->memUsedKb();
-    const qint64 avail   = this->m_provider->memAvailKb();
-    const qint64 free    = this->m_provider->memFreeKb();
-    const qint64 cached  = this->m_provider->memCachedKb();   // includes buffers
-    const qint64 buffers = this->m_provider->memBuffersKb();
-    const qint64 dirty   = this->m_provider->memDirtyKb();
+    const qint64 total   = this->m_provider->MemTotalKb();
+    const qint64 used    = this->m_provider->MemUsedKb();
+    const qint64 avail   = this->m_provider->MemAvailKb();
+    const qint64 free    = this->m_provider->MemFreeKb();
+    const qint64 cached  = this->m_provider->MemCachedKb();   // includes buffers
+    const qint64 buffers = this->m_provider->MemBuffersKb();
+    const qint64 dirty   = this->m_provider->MemDirtyKb();
 
     this->ui->totalLabel->setText(fmtGb(total) + " GB");
     this->ui->statInUseValue->setText(fmtGb(used)    + " GB");
@@ -55,14 +55,14 @@ void MemoryDetailWidget::onUpdated()
     this->ui->statCachedValue->setText(fmtGb(cached) + " GB");
     this->ui->statBuffersValue->setText(fmtGb(buffers) + " GB");
     this->ui->statFreeValue->setText(fmtGb(free)     + " GB");
-    const int dimmUsed = this->m_provider->memDimmSlotsUsed();
-    const int dimmTotal = this->m_provider->memDimmSlotsTotal();
+    const int dimmUsed = this->m_provider->MemDimmSlotsUsed();
+    const int dimmTotal = this->m_provider->MemDimmSlotsTotal();
     if (dimmTotal > 0)
         this->ui->statDimmSlotsValue->setText(tr("%1 / %2").arg(dimmUsed).arg(dimmTotal));
     else
         this->ui->statDimmSlotsValue->setText(tr("—"));
 
-    const int memMtps = this->m_provider->memSpeedMtps();
+    const int memMtps = this->m_provider->MemSpeedMtps();
     if (memMtps > 0)
         this->ui->statMemSpeedValue->setText(tr("%1 MT/s").arg(memMtps));
     else
@@ -79,9 +79,9 @@ void MemoryDetailWidget::onUpdated()
     // cached = Buffers + PageCache  (includes dirty subset)
     // used   = Total - Free - Cached (htop formula, non-reclaimable)
     // Verify: used + cached + free == total  ✓
-    this->ui->compositionBar->setSegments(used, dirty, cached, free, total);
+    this->ui->compositionBar->SetSegments(used, dirty, cached, free, total);
 
-    this->ui->graphWidget->setHistory(this->m_provider->memHistory());
+    this->ui->graphWidget->setHistory(this->m_provider->MemHistory());
 }
 
 // static
