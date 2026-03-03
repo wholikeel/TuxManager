@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Tux Manager
+Comment=Linux system monitor inspired by Windows Task Manager
+Exec=tux-manager
+Icon=/usr/share/pixmaps/tux-manager.ico
+Categories=System;Monitor;
+Terminal=false

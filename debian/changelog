@@ -1,0 +1,5 @@
+tux-manager (1.0.0) unstable; urgency=medium
+
+  * Rename project and package to Tux Manager.
+
+ -- Petr Bena <petr@bena.rocks>  Tue, 03 Mar 2026 23:35:00 +0100

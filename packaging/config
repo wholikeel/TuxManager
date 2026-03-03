@@ -1,0 +1,13 @@
+#!/bin/bash
+################################################################################
+# config - Shared configuration for Tux Manager packaging scripts
+################################################################################
+
+# Application metadata
+APP_NAME="tux-manager"
+APP_VERSION="1.0.0"
+MAINTAINER="Petr Bena <petr@bena.rocks>"
+DESCRIPTION="Tux Manager - Linux system monitor inspired by Windows Task Manager"
+
+# Icon path (relative to project root)
+APP_ICON_PATH="src/linux_task_manager_256.ico"
