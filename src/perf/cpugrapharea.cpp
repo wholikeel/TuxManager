@@ -1,3 +1,21 @@
+/*
+ * Tux Manager - Linux system monitor
+ * Copyright (C) 2026 Petr Bena <petr@bena.rocks>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #include "cpugrapharea.h"
 
 #include "graphwidget.h"
@@ -14,9 +32,9 @@ CpuGraphArea::CpuGraphArea(QWidget *parent) : QWidget(parent), m_stack(new QStac
 {
     // Page 0 — single aggregate graph
     this->m_overallGraph = new GraphWidget(this->m_stack);
-    this->m_overallGraph->setSampleCapacity(HISTORY_SIZE);
-    this->m_overallGraph->setSeriesNames(tr("CPU"), tr("Kernel"));
-    this->m_overallGraph->setValueFormat(GraphWidget::ValueFormat::Percent);
+    this->m_overallGraph->SetSampleCapacity(HISTORY_SIZE);
+    this->m_overallGraph->SetSeriesNames(tr("CPU"), tr("Kernel"));
+    this->m_overallGraph->SetValueFormat(GraphWidget::ValueFormat::Percent);
     this->m_stack->addWidget(this->m_overallGraph);  // index 0
 
     // Page 1 — per-core grid (populated lazily in ensureCoreGraphs)
@@ -54,9 +72,9 @@ void CpuGraphArea::setShowKernelTime(bool show)
     // the darker fill disappears without waiting for the next data tick.
     if (!show)
     {
-        this->m_overallGraph->setSecondaryHistory({});
+        this->m_overallGraph->SetSecondaryHistory({});
         for (GraphWidget *g : this->m_coreGraphs)
-            g->setSecondaryHistory({});
+            g->SetSecondaryHistory({});
     }
     // When turning ON the provider's next tick (≤1 s) will populate them.
 }
@@ -67,11 +85,11 @@ void CpuGraphArea::updateData(const PerfDataProvider *provider)
         return;
 
     // ── Aggregate graph ───────────────────────────────────────────────────────
-    this->m_overallGraph->setHistory(provider->CpuHistory());
+    this->m_overallGraph->SetHistory(provider->CpuHistory());
     if (this->m_showKernelTime)
-        this->m_overallGraph->setSecondaryHistory(provider->CpuKernelHistory());
+        this->m_overallGraph->SetSecondaryHistory(provider->CpuKernelHistory());
     else
-        this->m_overallGraph->setSecondaryHistory({});
+        this->m_overallGraph->SetSecondaryHistory({});
 
     // ── Per-core grid ─────────────────────────────────────────────────────────
     const int cores = provider->CoreCount();
@@ -80,11 +98,11 @@ void CpuGraphArea::updateData(const PerfDataProvider *provider)
         this->ensureCoreGraphs(cores);
         for (int i = 0; i < cores; ++i)
         {
-            this->m_coreGraphs.at(i)->setHistory(provider->CoreHistory(i));
+            this->m_coreGraphs.at(i)->SetHistory(provider->CoreHistory(i));
             if (this->m_showKernelTime)
-                this->m_coreGraphs.at(i)->setSecondaryHistory(provider->CoreKernelHistory(i));
+                this->m_coreGraphs.at(i)->SetSecondaryHistory(provider->CoreKernelHistory(i));
             else
-                this->m_coreGraphs.at(i)->setSecondaryHistory({});
+                this->m_coreGraphs.at(i)->SetSecondaryHistory({});
         }
     }
 }
@@ -121,11 +139,11 @@ void CpuGraphArea::ensureCoreGraphs(int count)
     for (int i = 0; i < count; ++i)
     {
         GraphWidget *g = new GraphWidget(this->m_perCoreContainer);
-        g->setSampleCapacity(HISTORY_SIZE);
-        g->setGridColumns(2);
-        g->setGridRows(2);
-        g->setSeriesNames(tr("CPU %1").arg(i), tr("Kernel"));
-        g->setValueFormat(GraphWidget::ValueFormat::Percent);
+        g->SetSampleCapacity(HISTORY_SIZE);
+        g->SetGridColumns(2);
+        g->SetGridRows(2);
+        g->SetSeriesNames(tr("CPU %1").arg(i), tr("Kernel"));
+        g->SetValueFormat(GraphWidget::ValueFormat::Percent);
         g->setToolTip(tr("CPU %1").arg(i));
         g->show();   // explicitly unhide — parent may be on a hidden QStackedWidget page
         this->m_coreGraphs.append(g);

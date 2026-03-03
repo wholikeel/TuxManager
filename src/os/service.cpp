@@ -1,22 +1,39 @@
+/*
+ * Tux Manager - Linux system monitor
+ * Copyright (C) 2026 Petr Bena <petr@bena.rocks>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #include "service.h"
 #include "servicehelper.h"
 
 #include <QRegularExpression>
 
-namespace OS
-{
+using namespace OS;
 
-bool Service::isSystemdAvailable(QString *reason)
+bool Service::IsSystemdAvailable(QString *reason)
 {
-    return ServiceHelper::isSystemdAvailable(reason);
+    return ServiceHelper::IsSystemdAvailable(reason);
 }
 
-QList<Service> Service::loadAll(QString *error)
+QList<Service> Service::LoadAll(QString *error)
 {
     QList<Service> out;
 
     QString reason;
-    if (!ServiceHelper::isSystemdAvailable(&reason))
+    if (!ServiceHelper::IsSystemdAvailable(&reason))
     {
         if (error)
             *error = reason;
@@ -24,7 +41,7 @@ QList<Service> Service::loadAll(QString *error)
     }
 
     QList<ServiceHelper::ServiceRecord> rows;
-    if (ServiceHelper::listServicesViaSystemdDbus(rows, error))
+    if (ServiceHelper::ListServicesViaSystemdDbus(rows, error))
     {
         out.reserve(rows.size());
         for (const auto &r : rows)
@@ -55,7 +72,7 @@ QList<Service> Service::loadAll(QString *error)
         "--no-legend",
         "--plain"
     };
-    if (!ServiceHelper::runSystemctl(args, stdoutText, stderrText, exitCode) || exitCode != 0)
+    if (!ServiceHelper::RunSystemctl(args, stdoutText, stderrText, exitCode) || exitCode != 0)
     {
         if (error)
             *error = stderrText.isEmpty()
@@ -90,4 +107,3 @@ QList<Service> Service::loadAll(QString *error)
     return out;
 }
 
-} // namespace Os

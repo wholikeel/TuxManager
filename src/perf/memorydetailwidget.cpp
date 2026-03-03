@@ -1,20 +1,37 @@
+/*
+ * Tux Manager - Linux system monitor
+ * Copyright (C) 2026 Petr Bena <petr@bena.rocks>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #include "memorydetailwidget.h"
 #include "ui_memorydetailwidget.h"
 
-namespace Perf
-{
+using namespace Perf;
 
 MemoryDetailWidget::MemoryDetailWidget(QWidget *parent) : QWidget(parent), ui(new Ui::MemoryDetailWidget)
 {
     this->ui->setupUi(this);
 
     // Memory graph: purple / magenta
-    this->ui->graphWidget->setColor(QColor(0xcc, 0x44, 0xcc), QColor(0x66, 0x11, 0x66, 130));
-    this->ui->graphWidget->setSampleCapacity(HISTORY_SIZE);
-    this->ui->graphWidget->setGridColumns(6);
-    this->ui->graphWidget->setGridRows(4);
-    this->ui->graphWidget->setSeriesNames(tr("Used memory"));
-    this->ui->graphWidget->setValueFormat(GraphWidget::ValueFormat::Percent);
+    this->ui->graphWidget->SetColor(QColor(0xcc, 0x44, 0xcc), QColor(0x66, 0x11, 0x66, 130));
+    this->ui->graphWidget->SetSampleCapacity(HISTORY_SIZE);
+    this->ui->graphWidget->SetGridColumns(6);
+    this->ui->graphWidget->SetGridRows(4);
+    this->ui->graphWidget->SetSeriesNames(tr("Used memory"));
+    this->ui->graphWidget->SetValueFormat(GraphWidget::ValueFormat::Percent);
 }
 
 MemoryDetailWidget::~MemoryDetailWidget()
@@ -81,7 +98,7 @@ void MemoryDetailWidget::onUpdated()
     // Verify: used + cached + free == total  ✓
     this->ui->compositionBar->SetSegments(used, dirty, cached, free, total);
 
-    this->ui->graphWidget->setHistory(this->m_provider->MemHistory());
+    this->ui->graphWidget->SetHistory(this->m_provider->MemHistory());
 }
 
 // static
@@ -93,4 +110,3 @@ QString MemoryDetailWidget::fmtGb(qint64 kb)
     return QString::number(gb, 'f', 2);
 }
 
-} // namespace Perf

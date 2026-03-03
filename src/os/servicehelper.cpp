@@ -1,3 +1,21 @@
+/*
+ * Tux Manager - Linux system monitor
+ * Copyright (C) 2026 Petr Bena <petr@bena.rocks>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #include "servicehelper.h"
 
 #include <dlfcn.h>
@@ -5,8 +23,7 @@
 #include <QProcess>
 #include <QStandardPaths>
 
-namespace OS
-{
+using namespace OS;
 
 namespace
 {
@@ -55,10 +72,8 @@ bool ensureSdBusLoaded(QString *error)
     pSdBusUnref = reinterpret_cast<FnSdBusUnref>(::dlsym(g_sdLib, "sd_bus_unref"));
     pSdBusCallMethod = reinterpret_cast<FnSdBusCallMethod>(::dlsym(g_sdLib, "sd_bus_call_method"));
     pSdBusMessageUnref = reinterpret_cast<FnSdBusMessageUnref>(::dlsym(g_sdLib, "sd_bus_message_unref"));
-    pSdBusMessageEnterContainer = reinterpret_cast<FnSdBusMessageEnterContainer>(
-                ::dlsym(g_sdLib, "sd_bus_message_enter_container"));
-    pSdBusMessageExitContainer = reinterpret_cast<FnSdBusMessageExitContainer>(
-                ::dlsym(g_sdLib, "sd_bus_message_exit_container"));
+    pSdBusMessageEnterContainer = reinterpret_cast<FnSdBusMessageEnterContainer>(::dlsym(g_sdLib, "sd_bus_message_enter_container"));
+    pSdBusMessageExitContainer = reinterpret_cast<FnSdBusMessageExitContainer>(::dlsym(g_sdLib, "sd_bus_message_exit_container"));
     pSdBusMessageRead = reinterpret_cast<FnSdBusMessageRead>(::dlsym(g_sdLib, "sd_bus_message_read"));
 
     if (!pSdBusOpenSystem || !pSdBusUnref || !pSdBusCallMethod || !pSdBusMessageUnref
@@ -74,7 +89,7 @@ bool ensureSdBusLoaded(QString *error)
 }
 } // namespace
 
-bool ServiceHelper::isSystemdAvailable(QString *reason)
+bool ServiceHelper::IsSystemdAvailable(QString *reason)
 {
     const QString exe = QStandardPaths::findExecutable("systemctl");
     if (exe.isEmpty())
@@ -96,7 +111,7 @@ bool ServiceHelper::isSystemdAvailable(QString *reason)
     return true;
 }
 
-bool ServiceHelper::runSystemctl(const QStringList &args,
+bool ServiceHelper::RunSystemctl(const QStringList &args,
                                  QString          &stdoutText,
                                  QString          &stderrText,
                                  int              &exitCode,
@@ -135,7 +150,7 @@ bool ServiceHelper::runSystemctl(const QStringList &args,
     return p.exitStatus() == QProcess::NormalExit;
 }
 
-bool ServiceHelper::listServicesViaSystemdDbus(QList<ServiceRecord> &records, QString *error)
+bool ServiceHelper::ListServicesViaSystemdDbus(QList<ServiceRecord> &records, QString *error)
 {
     records.clear();
 
@@ -256,4 +271,3 @@ bool ServiceHelper::listServicesViaSystemdDbus(QList<ServiceRecord> &records, QS
     return true;
 }
 
-} // namespace Os

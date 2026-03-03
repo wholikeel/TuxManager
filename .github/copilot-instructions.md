@@ -2,7 +2,7 @@
 
 ## Project overview
 
-**SystemInfo** is a Linux system monitor application built with **Qt6** (qmake, `.ui` files).
+**Tux Manager** is a Linux system monitor application built with **Qt6** (qmake, `.ui` files).
 It is inspired by the Windows Task Manager but targets Linux and aims to expose significantly more detail.
 
 ## Key architecture

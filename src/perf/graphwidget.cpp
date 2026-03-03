@@ -1,3 +1,21 @@
+/*
+ * Tux Manager - Linux system monitor
+ * Copyright (C) 2026 Petr Bena <petr@bena.rocks>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #include "graphwidget.h"
 
 #include <cmath>
@@ -7,8 +25,7 @@
 #include <QPaintEvent>
 #include <QToolTip>
 
-namespace Perf
-{
+using namespace Perf;
 
 GraphWidget::GraphWidget(QWidget *parent) : QWidget(parent)
 {
@@ -16,7 +33,7 @@ GraphWidget::GraphWidget(QWidget *parent) : QWidget(parent)
     this->setMouseTracking(true);
 }
 
-void GraphWidget::setHistory(const QVector<double> &data, double maxVal)
+void GraphWidget::SetHistory(const QVector<double> &data, double maxVal)
 {
     if (data != this->m_data)
         ++this->m_historyTick;
@@ -25,13 +42,13 @@ void GraphWidget::setHistory(const QVector<double> &data, double maxVal)
     this->update();
 }
 
-void GraphWidget::setSecondaryHistory(const QVector<double> &data2)
+void GraphWidget::SetSecondaryHistory(const QVector<double> &data2)
 {
     this->m_data2 = data2;
     this->update();
 }
 
-void GraphWidget::setSeriesNames(const QString &primary, const QString &secondary)
+void GraphWidget::SetSeriesNames(const QString &primary, const QString &secondary)
 {
     if (!primary.isEmpty())
         this->m_primaryName = primary;
@@ -39,14 +56,14 @@ void GraphWidget::setSeriesNames(const QString &primary, const QString &secondar
         this->m_secondaryName = secondary;
 }
 
-void GraphWidget::setColor(QColor line, QColor fill)
+void GraphWidget::SetColor(QColor line, QColor fill)
 {
     this->m_lineColor = line;
     this->m_fillColor = fill;
     this->update();
 }
 
-void GraphWidget::setSampleCapacity(int samples)
+void GraphWidget::SetSampleCapacity(int samples)
 {
     this->m_sampleCapacity = qMax(2, samples);
     this->update();
@@ -277,4 +294,3 @@ QString GraphWidget::formatValue(double v) const
     }
 }
 
-} // namespace Perf

@@ -1,4 +1,4 @@
-# SystemInfo
+# Tux Manager
 
 A Linux system monitor application built with Qt6, inspired by the Windows Task Manager but designed to go further — providing deep visibility into system processes, performance metrics, users, and services.
 
@@ -26,7 +26,7 @@ A Linux system monitor application built with Qt6, inspired by the Windows Task 
 mkdir build && cd build
 qmake ../SystemInfo.pro
 make -j$(nproc)
-./SystemInfo
+./tux-manager
 ```
 
 ### Qt Creator
@@ -36,7 +36,7 @@ Open `SystemInfo.pro` in Qt Creator and press **Run**.
 ## Project Structure
 
 ```
-SystemInfo/
+TuxManager/
 ├── main.cpp
 ├── mainwindow.{h,cpp,ui}       # Main window — hosts the tab widget
 ├── processeswidget.{h,cpp,ui}  # Processes tab
@@ -48,4 +48,4 @@ SystemInfo/
 
 ## License
 
-MIT
+GPL-3.0-or-later

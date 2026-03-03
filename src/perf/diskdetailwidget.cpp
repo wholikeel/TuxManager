@@ -1,32 +1,49 @@
+/*
+ * Tux Manager - Linux system monitor
+ * Copyright (C) 2026 Petr Bena <petr@bena.rocks>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #include "diskdetailwidget.h"
 #include "ui_diskdetailwidget.h"
 
 #include <algorithm>
 
-namespace Perf
-{
+using namespace Perf;
 
 DiskDetailWidget::DiskDetailWidget(QWidget *parent) : QWidget(parent), ui(new Ui::DiskDetailWidget)
 {
     this->ui->setupUi(this);
 
     // Active time graph
-    this->ui->activeGraphWidget->setColor(QColor(0x66, 0xbb, 0x44),
+    this->ui->activeGraphWidget->SetColor(QColor(0x66, 0xbb, 0x44),
                                           QColor(0x33, 0x66, 0x22, 120));
-    this->ui->activeGraphWidget->setSampleCapacity(HISTORY_SIZE);
-    this->ui->activeGraphWidget->setGridColumns(6);
-    this->ui->activeGraphWidget->setGridRows(4);
-    this->ui->activeGraphWidget->setSeriesNames(tr("Active time"));
-    this->ui->activeGraphWidget->setValueFormat(GraphWidget::ValueFormat::Percent);
+    this->ui->activeGraphWidget->SetSampleCapacity(HISTORY_SIZE);
+    this->ui->activeGraphWidget->SetGridColumns(6);
+    this->ui->activeGraphWidget->SetGridRows(4);
+    this->ui->activeGraphWidget->SetSeriesNames(tr("Active time"));
+    this->ui->activeGraphWidget->SetValueFormat(GraphWidget::ValueFormat::Percent);
 
     // Transfer graph (read + write overlay)
-    this->ui->transferGraphWidget->setColor(QColor(0x88, 0xcc, 0x66),
+    this->ui->transferGraphWidget->SetColor(QColor(0x88, 0xcc, 0x66),
                                             QColor(0x33, 0x66, 0x22, 100));
-    this->ui->transferGraphWidget->setSampleCapacity(HISTORY_SIZE);
-    this->ui->transferGraphWidget->setGridColumns(6);
-    this->ui->transferGraphWidget->setGridRows(4);
-    this->ui->transferGraphWidget->setSeriesNames(tr("Read"), tr("Write"));
-    this->ui->transferGraphWidget->setValueFormat(GraphWidget::ValueFormat::BytesPerSec);
+    this->ui->transferGraphWidget->SetSampleCapacity(HISTORY_SIZE);
+    this->ui->transferGraphWidget->SetGridColumns(6);
+    this->ui->transferGraphWidget->SetGridRows(4);
+    this->ui->transferGraphWidget->SetSeriesNames(tr("Read"), tr("Write"));
+    this->ui->transferGraphWidget->SetValueFormat(GraphWidget::ValueFormat::BytesPerSec);
 }
 
 DiskDetailWidget::~DiskDetailWidget()
@@ -88,7 +105,7 @@ void DiskDetailWidget::onUpdated()
     this->ui->systemDiskValueLabel->setText(isSystemDisk ? tr("Yes") : tr("No"));
     this->ui->pageFileValueLabel->setText(hasPageFile ? tr("Yes") : tr("No"));
 
-    this->ui->activeGraphWidget->setHistory(activeHistory, 100.0);
+    this->ui->activeGraphWidget->SetHistory(activeHistory, 100.0);
     this->ui->activeGraphMaxLabel->setText(tr("100%"));
 
     double maxRate = 1024.0; // at least 1 KB/s scale
@@ -96,8 +113,8 @@ void DiskDetailWidget::onUpdated()
         maxRate = std::max(maxRate, v);
     for (double v : writeHistory)
         maxRate = std::max(maxRate, v);
-    this->ui->transferGraphWidget->setHistory(readHistory, maxRate);
-    this->ui->transferGraphWidget->setSecondaryHistory(writeHistory);
+    this->ui->transferGraphWidget->SetHistory(readHistory, maxRate);
+    this->ui->transferGraphWidget->SetSecondaryHistory(writeHistory);
     this->ui->transferGraphMaxLabel->setText(formatRate(maxRate));
 }
 
@@ -120,4 +137,3 @@ QString DiskDetailWidget::formatSize(qint64 bytes)
     return QString::number(gb, 'f', 2) + tr(" GB");
 }
 
-} // namespace Perf

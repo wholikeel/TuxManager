@@ -1,3 +1,21 @@
+/*
+ * Tux Manager - Linux system monitor
+ * Copyright (C) 2026 Petr Bena <petr@bena.rocks>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #include "sidepanelitem.h"
 #include "perfdataprovider.h"
 
@@ -6,8 +24,7 @@
 #include <QPaintEvent>
 #include <QVBoxLayout>
 
-namespace Perf
-{
+using namespace Perf;
 
 SidePanelItem::SidePanelItem(const QString &title, QWidget *parent) : QWidget(parent), m_title(title), m_graph(new GraphWidget(this))
 {
@@ -19,9 +36,9 @@ SidePanelItem::SidePanelItem(const QString &title, QWidget *parent) : QWidget(pa
     QVBoxLayout *lay = new QVBoxLayout(this);
     lay->setContentsMargins(6, 22, 6, 4);   // leave room for title text
     lay->setSpacing(0);
-    this->m_graph->setSampleCapacity(HISTORY_SIZE);
-    this->m_graph->setHoverLineEnabled(false);
-    this->m_graph->setHoverTooltipEnabled(false);
+    this->m_graph->SetSampleCapacity(HISTORY_SIZE);
+    this->m_graph->SetHoverLineEnabled(false);
+    this->m_graph->SetHoverTooltipEnabled(false);
     lay->addWidget(this->m_graph);
     this->setLayout(lay);
 }
@@ -29,7 +46,7 @@ SidePanelItem::SidePanelItem(const QString &title, QWidget *parent) : QWidget(pa
 void SidePanelItem::Update(const QString &subtitle, const QVector<double> &history, double maxVal)
 {
     this->m_subtitle = subtitle;
-    this->m_graph->setHistory(history, maxVal);
+    this->m_graph->SetHistory(history, maxVal);
     this->repaint();  // repaint own text; graph repaints itself inside setHistory
 }
 
@@ -43,7 +60,7 @@ void SidePanelItem::SetSelected(bool selected)
 
 void SidePanelItem::SetGraphColor(QColor line, QColor fill)
 {
-    this->m_graph->setColor(line, fill);
+    this->m_graph->SetColor(line, fill);
 }
 
 // ── Paint ─────────────────────────────────────────────────────────────────────
@@ -117,4 +134,3 @@ void SidePanelItem::leaveEvent(QEvent *event)
     this->repaint();
 }
 
-} // namespace Perf

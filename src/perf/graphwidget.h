@@ -1,3 +1,21 @@
+/*
+ * Tux Manager - Linux system monitor
+ * Copyright (C) 2026 Petr Bena <petr@bena.rocks>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #ifndef PERF_GRAPHWIDGET_H
 #define PERF_GRAPHWIDGET_H
 
@@ -10,7 +28,7 @@ namespace Perf
     /// Reusable scrolling-graph widget used both in the side panel mini-thumbnails
     /// and in the detail panes.
     ///
-    /// Call setHistory() to push a new data snapshot, then the widget repaints.
+    /// Call SetHistory() to push a new data snapshot, then the widget repaints.
     /// Values are assumed to be in the range [0, maxVal].
     class GraphWidget : public QWidget
     {
@@ -28,27 +46,27 @@ namespace Perf
             explicit GraphWidget(QWidget *parent = nullptr);
 
             /// Replace the displayed history and trigger a repaint.
-            void setHistory(const QVector<double> &data, double maxVal = 100.0);
+            void SetHistory(const QVector<double> &data, double maxVal = 100.0);
 
             /// Optional secondary (kernel-time) history drawn as a darker overlay.
             /// Pass an empty vector to disable.
-            void setSecondaryHistory(const QVector<double> &data2);
+            void SetSecondaryHistory(const QVector<double> &data2);
             const QVector<double> &secondaryHistory() const { return this->m_data2; }
 
             /// Optional: change the line / fill colour pair from the default blue.
-            void setColor(QColor line, QColor fill);
+            void SetColor(QColor line, QColor fill);
 
             /// Number of horizontal grid divisions.
-            void setGridColumns(int cols) { this->m_gridCols = cols; update(); }
+            void SetGridColumns(int cols) { this->m_gridCols = cols; update(); }
             /// Number of vertical grid divisions.
-            void setGridRows(int rows)    { this->m_gridRows = rows; update(); }
+            void SetGridRows(int rows)    { this->m_gridRows = rows; update(); }
             /// Number of fixed time slots across the X axis (controls scrolling).
-            void setSampleCapacity(int samples);
+            void SetSampleCapacity(int samples);
 
-            void setHoverLineEnabled(bool enabled) { this->m_hoverLineEnabled = enabled; update(); }
-            void setHoverTooltipEnabled(bool enabled) { this->m_hoverTooltipEnabled = enabled; }
-            void setSeriesNames(const QString &primary, const QString &secondary = QString());
-            void setValueFormat(ValueFormat fmt) { this->m_valueFormat = fmt; }
+            void SetHoverLineEnabled(bool enabled) { this->m_hoverLineEnabled = enabled; update(); }
+            void SetHoverTooltipEnabled(bool enabled) { this->m_hoverTooltipEnabled = enabled; }
+            void SetSeriesNames(const QString &primary, const QString &secondary = QString());
+            void SetValueFormat(ValueFormat fmt) { this->m_valueFormat = fmt; }
 
             QSize sizeHint() const override { return QSize(200, 80); }
             QSize minimumSizeHint() const override { return QSize(60, 30); }

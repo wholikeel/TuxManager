@@ -1,3 +1,21 @@
+/*
+ * Tux Manager - Linux system monitor
+ * Copyright (C) 2026 Petr Bena <petr@bena.rocks>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #include "serviceswidget.h"
 #include "ui_serviceswidget.h"
 
@@ -10,11 +28,11 @@
 void ServiceRefreshWorker::fetch(quint64 token)
 {
     QString reason;
-    const bool systemdAvailable = OS::Service::isSystemdAvailable(&reason);
+    const bool systemdAvailable = OS::Service::IsSystemdAvailable(&reason);
     QString error;
     QList<OS::Service> services;
     if (systemdAvailable)
-        services = OS::Service::loadAll(&error);
+        services = OS::Service::LoadAll(&error);
 
     emit fetched(token, systemdAvailable, reason, services, error);
 }

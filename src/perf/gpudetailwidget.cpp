@@ -1,3 +1,21 @@
+/*
+ * Tux Manager - Linux system monitor
+ * Copyright (C) 2026 Petr Bena <petr@bena.rocks>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #include "gpudetailwidget.h"
 #include "configuration.h"
 
@@ -7,8 +25,7 @@
 #include <QPalette>
 #include <QVBoxLayout>
 
-namespace Perf
-{
+using namespace Perf;
 
 GpuDetailWidget::GpuDetailWidget(QWidget *parent) : QWidget(parent)
 {
@@ -24,11 +41,11 @@ GpuDetailWidget::GpuDetailWidget(QWidget *parent) : QWidget(parent)
 
     auto configureGraph = [&](GraphWidget *graph)
     {
-        graph->setColor(lineColor, fillColor);
-        graph->setSampleCapacity(HISTORY_SIZE);
-        graph->setGridColumns(6);
-        graph->setGridRows(4);
-        graph->setValueFormat(GraphWidget::ValueFormat::Percent);
+        graph->SetColor(lineColor, fillColor);
+        graph->SetSampleCapacity(HISTORY_SIZE);
+        graph->SetGridColumns(6);
+        graph->SetGridRows(4);
+        graph->SetValueFormat(GraphWidget::ValueFormat::Percent);
     };
 
     auto *root = new QVBoxLayout(this);
@@ -101,7 +118,7 @@ GpuDetailWidget::GpuDetailWidget(QWidget *parent) : QWidget(parent)
 
     this->m_dedicatedMemGraph = new GraphWidget(this);
     configureGraph(this->m_dedicatedMemGraph);
-    this->m_dedicatedMemGraph->setSeriesNames(tr("Dedicated memory usage"));
+    this->m_dedicatedMemGraph->SetSeriesNames(tr("Dedicated memory usage"));
     this->m_dedicatedMemGraph->setMinimumHeight(70);
     root->addWidget(this->m_dedicatedMemGraph);
 
@@ -120,7 +137,7 @@ GpuDetailWidget::GpuDetailWidget(QWidget *parent) : QWidget(parent)
 
     this->m_sharedMemGraph = new GraphWidget(this);
     configureGraph(this->m_sharedMemGraph);
-    this->m_sharedMemGraph->setSeriesNames(tr("Shared memory usage"));
+    this->m_sharedMemGraph->SetSeriesNames(tr("Shared memory usage"));
     this->m_sharedMemGraph->setMinimumHeight(70);
     root->addWidget(this->m_sharedMemGraph);
 
@@ -143,8 +160,8 @@ GpuDetailWidget::GpuDetailWidget(QWidget *parent) : QWidget(parent)
 
     this->m_copyBwGraph = new GraphWidget(this);
     configureGraph(this->m_copyBwGraph);
-    this->m_copyBwGraph->setSeriesNames(tr("TX"), tr("RX"));
-    this->m_copyBwGraph->setValueFormat(GraphWidget::ValueFormat::BytesPerSec);
+    this->m_copyBwGraph->SetSeriesNames(tr("TX"), tr("RX"));
+    this->m_copyBwGraph->SetValueFormat(GraphWidget::ValueFormat::BytesPerSec);
     this->m_copyBwGraph->setMinimumHeight(70);
     root->addWidget(this->m_copyBwGraph);
 
@@ -306,20 +323,20 @@ void GpuDetailWidget::onUpdated()
         if (engineIndex >= 0)
         {
             const QString engName = this->m_provider->GpuEngineName(this->m_gpuIndex, engineIndex);
-            graph->setSeriesNames(engName);
-            graph->setHistory(this->m_provider->GpuEngineHistory(this->m_gpuIndex, engineIndex), 100.0);
+            graph->SetSeriesNames(engName);
+            graph->SetHistory(this->m_provider->GpuEngineHistory(this->m_gpuIndex, engineIndex), 100.0);
             value->setText(QString::number(this->m_provider->GpuEnginePercent(this->m_gpuIndex, engineIndex), 'f', 0) + "%");
         } else
         {
-            graph->setHistory(QVector<double>(), 100.0);
+            graph->SetHistory(QVector<double>(), 100.0);
             value->setText("0%");
         }
     }
 
-    this->m_dedicatedMemGraph->setHistory(this->m_provider->GpuMemUsageHistory(this->m_gpuIndex), 100.0);
+    this->m_dedicatedMemGraph->SetHistory(this->m_provider->GpuMemUsageHistory(this->m_gpuIndex), 100.0);
     this->m_dedicatedMemGraphMaxLabel->setText(formatMemMib(dedicatedTotalMiB));
 
-    this->m_sharedMemGraph->setHistory(this->m_sharedMemHistory, 100.0);
+    this->m_sharedMemGraph->SetHistory(this->m_sharedMemHistory, 100.0);
     this->m_sharedMemGraphMaxLabel->setText(formatMemMib(sharedTotalMiB));
 
     const QVector<double> &txHistory = this->m_provider->GpuCopyTxHistory(this->m_gpuIndex);
@@ -329,8 +346,8 @@ void GpuDetailWidget::onUpdated()
         maxCopyRate = std::max(maxCopyRate, v);
     for (double v : rxHistory)
         maxCopyRate = std::max(maxCopyRate, v);
-    this->m_copyBwGraph->setHistory(txHistory, maxCopyRate);
-    this->m_copyBwGraph->setSecondaryHistory(rxHistory);
+    this->m_copyBwGraph->SetHistory(txHistory, maxCopyRate);
+    this->m_copyBwGraph->SetSecondaryHistory(rxHistory);
     this->m_copyBwGraphMaxLabel->setText(formatRate(maxCopyRate));
     this->m_copyBwGraph->setToolTip(tr("Copy bandwidth: light trace = TX, dark trace = RX"));
 }
@@ -352,4 +369,3 @@ QString GpuDetailWidget::formatRate(double bytesPerSec)
     return QString::number(bytesPerSec / 1024.0, 'f', 0) + QObject::tr(" KB/s");
 }
 
-} // namespace Perf
