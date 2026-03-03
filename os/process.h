@@ -5,7 +5,7 @@
 #include <QString>
 #include <sys/types.h>
 
-namespace Os
+namespace OS
 {
 
 /// Snapshot of a single Linux process read from /proc.

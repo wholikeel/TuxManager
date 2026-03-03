@@ -27,12 +27,10 @@ PerformanceWidget::PerformanceWidget(QWidget *parent)
     this->m_memDetail->setProvider(this->m_provider);
 
     // Update side panel thumbnails on every sample
-    connect(this->m_provider, &Perf::PerfDataProvider::updated,
-            this, &PerformanceWidget::onProviderUpdated);
+    connect(this->m_provider, &Perf::PerfDataProvider::updated, this, &PerformanceWidget::onProviderUpdated);
 
     // Expensive process/thread counting is only needed for CPU detail page.
-    connect(this->m_sidePanel, &Perf::SidePanel::currentChanged,
-            this, [this](int index)
+    connect(this->m_sidePanel, &Perf::SidePanel::currentChanged, this, [this](int index)
     {
         this->m_provider->setProcessStatsEnabled(index == PanelCpu);
     });
@@ -84,8 +82,7 @@ void PerformanceWidget::setupSidePanel()
     this->setupGpuPanels();
 
     // Side-panel selection drives the stacked widget page
-    connect(this->m_sidePanel, &Perf::SidePanel::currentChanged,
-            this->m_stack, &QStackedWidget::setCurrentIndex);
+    connect(this->m_sidePanel, &Perf::SidePanel::currentChanged, this->m_stack, &QStackedWidget::setCurrentIndex);
 }
 
 void PerformanceWidget::setupDiskPanels()

@@ -34,8 +34,8 @@ class ProcessesWidget : public QWidget
 
     private:
         Ui::ProcessesWidget      *ui;
-        Os::ProcessModel         *m_model;
-        Os::ProcessFilterProxy   *m_proxy;
+        OS::ProcessModel         *m_model;
+        OS::ProcessFilterProxy   *m_proxy;
         QTimer                   *m_refreshTimer;
         bool                      m_active { false };
 

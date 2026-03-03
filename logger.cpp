@@ -40,12 +40,10 @@ void Logger::Log(Level level, const QString &message)
     if (level < minLevel)
         return;
 
-    const QString timestamp =
-        QDateTime::currentDateTime().toString("[yyyy-MM-dd HH:mm:ss.zzz]");
-    const QString line =
-        QString("%1 %2: %3\n").arg(timestamp, levelTag(level), message);
+    const QString timestamp = QDateTime::currentDateTime().toString("[yyyy-MM-dd HH:mm:ss.zzz]");
+    const QString line = QString("%1 %2: %3\n").arg(timestamp, levelTag(level), message);
 
-    // WARN and ERROR → stderr, everything else → stdout
+    // WARN and ERROR stderr, everything else goes to stdout
     if (level >= Warn)
     {
         QTextStream err(stderr);

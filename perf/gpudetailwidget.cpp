@@ -197,8 +197,7 @@ void GpuDetailWidget::setProvider(PerfDataProvider *provider)
 
     if (this->m_provider)
     {
-        connect(this->m_provider, &PerfDataProvider::updated,
-                this, &GpuDetailWidget::onUpdated);
+        connect(this->m_provider, &PerfDataProvider::updated, this, &GpuDetailWidget::onUpdated);
         this->onUpdated();
     }
 }
@@ -311,8 +310,7 @@ void GpuDetailWidget::onUpdated()
             graph->setSeriesNames(engName);
             graph->setHistory(this->m_provider->gpuEngineHistory(this->m_gpuIndex, engineIndex), 100.0);
             value->setText(QString::number(this->m_provider->gpuEnginePercent(this->m_gpuIndex, engineIndex), 'f', 0) + "%");
-        }
-        else
+        } else
         {
             graph->setHistory(QVector<double>(), 100.0);
             value->setText("0%");

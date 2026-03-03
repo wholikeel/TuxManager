@@ -6,7 +6,7 @@
 #include <QSortFilterProxyModel>
 #include <sys/types.h>
 
-namespace Os
+namespace OS
 {
     /// Extended sort/filter proxy for the process table.
     ///

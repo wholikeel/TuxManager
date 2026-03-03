@@ -6,19 +6,35 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>600</height>
+    <width>900</width>
+    <height>640</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="leftMargin"><number>8</number></property>
+   <property name="topMargin"><number>8</number></property>
+   <property name="rightMargin"><number>8</number></property>
+   <property name="bottomMargin"><number>8</number></property>
+   <property name="spacing"><number>6</number></property>
    <item>
-    <widget class="QLabel" name="placeholderLabel">
-     <property name="text">
-      <string>Users — coming soon</string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignCenter</set>
-     </property>
+    <widget class="QTreeWidget" name="treeWidget">
+     <property name="alternatingRowColors"><bool>true</bool></property>
+     <property name="rootIsDecorated"><bool>true</bool></property>
+     <property name="itemsExpandable"><bool>true</bool></property>
+     <column>
+      <property name="text"><string>User / Process</string></property>
+     </column>
+     <column>
+      <property name="text"><string>CPU</string></property>
+     </column>
+     <column>
+      <property name="text"><string>Memory</string></property>
+     </column>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="statusLabel">
+     <property name="text"><string>Logged in users: 0</string></property>
     </widget>
    </item>
   </layout>

@@ -11,30 +11,28 @@ QT_END_NAMESPACE
 
 namespace Perf
 {
+    class DiskDetailWidget : public QWidget
+    {
+        Q_OBJECT
 
-class DiskDetailWidget : public QWidget
-{
-    Q_OBJECT
+        public:
+            explicit DiskDetailWidget(QWidget *parent = nullptr);
+            ~DiskDetailWidget();
 
-    public:
-        explicit DiskDetailWidget(QWidget *parent = nullptr);
-        ~DiskDetailWidget();
+            void setProvider(PerfDataProvider *provider);
+            void setDiskIndex(int index);
 
-        void setProvider(PerfDataProvider *provider);
-        void setDiskIndex(int index);
+        private slots:
+            void onUpdated();
 
-    private slots:
-        void onUpdated();
+        private:
+            static QString formatRate(double bytesPerSec);
+            static QString formatSize(qint64 bytes);
 
-    private:
-        static QString formatRate(double bytesPerSec);
-        static QString formatSize(qint64 bytes);
-
-        Ui::DiskDetailWidget *ui;
-        PerfDataProvider     *m_provider { nullptr };
-        int                   m_diskIndex { -1 };
-};
-
+            Ui::DiskDetailWidget *ui;
+            PerfDataProvider     *m_provider { nullptr };
+            int                   m_diskIndex { -1 };
+    };
 } // namespace Perf
 
 #endif // PERF_DISKDETAILWIDGET_H

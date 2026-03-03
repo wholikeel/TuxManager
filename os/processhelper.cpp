@@ -6,7 +6,7 @@
 #include <signal.h>
 #include <sys/resource.h>
 
-namespace Os
+namespace OS
 {
 
 // ── Signal sending ────────────────────────────────────────────────────────────

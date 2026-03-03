@@ -2,7 +2,7 @@
 
 #include <unistd.h>
 
-namespace Os
+namespace OS
 {
 
 ProcessFilterProxy::ProcessFilterProxy(QObject *parent)

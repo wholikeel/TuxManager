@@ -2,7 +2,7 @@
 #include <QFile>
 #include <unistd.h>
 
-namespace Os
+namespace OS
 {
 
 // ── Construction ──────────────────────────────────────────────────────────────

@@ -11,27 +11,25 @@ QT_END_NAMESPACE
 
 namespace Perf
 {
+    class MemoryDetailWidget : public QWidget
+    {
+        Q_OBJECT
 
-class MemoryDetailWidget : public QWidget
-{
-    Q_OBJECT
+        public:
+            explicit MemoryDetailWidget(QWidget *parent = nullptr);
+            ~MemoryDetailWidget();
 
-    public:
-        explicit MemoryDetailWidget(QWidget *parent = nullptr);
-        ~MemoryDetailWidget();
+            void setProvider(PerfDataProvider *provider);
 
-        void setProvider(PerfDataProvider *provider);
+        private slots:
+            void onUpdated();
 
-    private slots:
-        void onUpdated();
+        private:
+            Ui::MemoryDetailWidget *ui;
+            PerfDataProvider       *m_provider { nullptr };
 
-    private:
-        Ui::MemoryDetailWidget *ui;
-        PerfDataProvider       *m_provider { nullptr };
-
-        static QString fmtGb(qint64 kb);
-};
-
+            static QString fmtGb(qint64 kb);
+    };
 } // namespace Perf
 
 #endif // PERF_MEMORYDETAILWIDGET_H

@@ -7,7 +7,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-namespace Os
+namespace OS
 {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────

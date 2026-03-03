@@ -42,6 +42,7 @@ void Configuration::Load()
         for (const QVariant &v : gpuSel)
             this->GpuEngineSelectorIndices.append(v.toInt());
     }
+
     while (this->GpuEngineSelectorIndices.size() < 4)
         this->GpuEngineSelectorIndices.append(this->GpuEngineSelectorIndices.size());
     if (this->GpuEngineSelectorIndices.size() > 4)

@@ -6,67 +6,65 @@
 #include <QAbstractTableModel>
 #include <QHash>
 
-namespace Os
+namespace OS
 {
+    class ProcessModel : public QAbstractTableModel
+    {
+        Q_OBJECT
 
-class ProcessModel : public QAbstractTableModel
-{
-    Q_OBJECT
+        public:
+            /// Logical columns — order in the enum defines default display order.
+            enum Column
+            {
+                ColPid = 0,
+                ColName,
+                ColUser,
+                ColState,
+                ColCpu,
+                ColMemRss,
+                ColMemVirt,
+                ColThreads,
+                ColPriority,
+                ColNice,
+                ColCmdline,
+                ColCount           ///< Sentinel — always last
+            };
 
-    public:
-        /// Logical columns — order in the enum defines default display order.
-        enum Column
-        {
-            ColPid = 0,
-            ColName,
-            ColUser,
-            ColState,
-            ColCpu,
-            ColMemRss,
-            ColMemVirt,
-            ColThreads,
-            ColPriority,
-            ColNice,
-            ColCmdline,
-            ColCount           ///< Sentinel — always last
-        };
+            explicit ProcessModel(QObject *parent = nullptr);
 
-        explicit ProcessModel(QObject *parent = nullptr);
+            // QAbstractTableModel interface
+            int      rowCount(const QModelIndex &parent = QModelIndex()) const override;
+            int      columnCount(const QModelIndex &parent = QModelIndex()) const override;
+            QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+            QVariant headerData(int section, Qt::Orientation orientation,
+                                int role = Qt::DisplayRole) const override;
+            Qt::ItemFlags flags(const QModelIndex &index) const override;
 
-        // QAbstractTableModel interface
-        int      rowCount(const QModelIndex &parent = QModelIndex()) const override;
-        int      columnCount(const QModelIndex &parent = QModelIndex()) const override;
-        QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
-        QVariant headerData(int section, Qt::Orientation orientation,
-                            int role = Qt::DisplayRole) const override;
-        Qt::ItemFlags flags(const QModelIndex &index) const override;
+            /// Reload all process data from /proc and update CPU%.
+            /// Call this on a timer tick.
+            void Refresh();
+            void setShowKernelTasks(bool show) { this->m_showKernelTasks = show; }
+            void setShowOtherUsersProcs(bool show) { this->m_showOtherUsersProcs = show; }
 
-        /// Reload all process data from /proc and update CPU%.
-        /// Call this on a timer tick.
-        void Refresh();
-        void setShowKernelTasks(bool show) { this->m_showKernelTasks = show; }
-        void setShowOtherUsersProcs(bool show) { this->m_showOtherUsersProcs = show; }
+            /// The raw process list (read-only access for external use).
+            const QList<Process> &processes() const { return this->m_processes; }
 
-        /// The raw process list (read-only access for external use).
-        const QList<Process> &processes() const { return this->m_processes; }
+        private:
+            QList<Process>          m_processes;
+            QHash<pid_t, quint64>   m_prevTicks;               ///< cpuTicks from previous sample
+            quint64                 m_prevCpuTotalTicks { 0 }; ///< Total CPU jiffies from previous /proc/stat sample
+            int                     m_numCpus { 1 };           ///< Online CPU count for normalisation
+            uid_t                   m_myUid { 0 };
+            bool                    m_showKernelTasks { true };
+            bool                    m_showOtherUsersProcs { true };
 
-    private:
-        QList<Process>          m_processes;
-        QHash<pid_t, quint64>   m_prevTicks;               ///< cpuTicks from previous sample
-        quint64                 m_prevCpuTotalTicks { 0 }; ///< Total CPU jiffies from previous /proc/stat sample
-        int                     m_numCpus { 1 };           ///< Online CPU count for normalisation
-        uid_t                   m_myUid { 0 };
-        bool                    m_showKernelTasks { true };
-        bool                    m_showOtherUsersProcs { true };
+            /// Read the total elapsed CPU jiffies from /proc/stat (all CPUs, all states).
+            /// Returns 0 on error.
+            static quint64 readTotalCpuJiffies();
 
-        /// Read the total elapsed CPU jiffies from /proc/stat (all CPUs, all states).
-        /// Returns 0 on error.
-        static quint64 readTotalCpuJiffies();
-
-        static QString formatMemory(quint64 kb);
-        static QString columnHeader(Column col);
-};
-
+            static QString formatMemory(quint64 kb);
+            static QString columnHeader(Column col);
+    };
 } // namespace Os
 
 #endif // OS_PROCESSMODEL_H

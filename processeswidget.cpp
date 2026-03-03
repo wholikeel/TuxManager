@@ -15,8 +15,8 @@
 ProcessesWidget::ProcessesWidget(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::ProcessesWidget)
-    , m_model(new Os::ProcessModel(this))
-    , m_proxy(new Os::ProcessFilterProxy(this))
+    , m_model(new OS::ProcessModel(this))
+    , m_proxy(new OS::ProcessFilterProxy(this))
     , m_refreshTimer(new QTimer(this))
 {
     this->ui->setupUi(this);
@@ -24,23 +24,16 @@ ProcessesWidget::ProcessesWidget(QWidget *parent)
     this->setupTable();
     this->setupRefreshCombo();
 
-    connect(this->ui->searchEdit, &QLineEdit::textChanged,
-            this->m_proxy, &Os::ProcessFilterProxy::setFilterFixedString);
-    connect(this->ui->refreshCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &ProcessesWidget::onRefreshRateChanged);
-    connect(this->ui->tableView->horizontalHeader(), &QHeaderView::customContextMenuRequested,
-            this, &ProcessesWidget::onHeaderContextMenu);
-    connect(this->m_refreshTimer, &QTimer::timeout,
-            this, &ProcessesWidget::onTimerTick);
+    connect(this->ui->searchEdit, &QLineEdit::textChanged, this->m_proxy, &OS::ProcessFilterProxy::setFilterFixedString);
+    connect(this->ui->refreshCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ProcessesWidget::onRefreshRateChanged);
+    connect(this->ui->tableView->horizontalHeader(), &QHeaderView::customContextMenuRequested, this, &ProcessesWidget::onHeaderContextMenu);
+    connect(this->m_refreshTimer, &QTimer::timeout, this, &ProcessesWidget::onTimerTick);
 
     // Update status bar whenever the proxy's visible row count changes
     // (model reset after refresh, or filter toggle)
-    connect(this->m_proxy, &QAbstractItemModel::modelReset,
-            this, &ProcessesWidget::updateStatusBar);
-    connect(this->m_proxy, &QAbstractItemModel::rowsInserted,
-            this, &ProcessesWidget::updateStatusBar);
-    connect(this->m_proxy, &QAbstractItemModel::rowsRemoved,
-            this, &ProcessesWidget::updateStatusBar);
+    connect(this->m_proxy, &QAbstractItemModel::modelReset, this, &ProcessesWidget::updateStatusBar);
+    connect(this->m_proxy, &QAbstractItemModel::rowsInserted, this, &ProcessesWidget::updateStatusBar);
+    connect(this->m_proxy, &QAbstractItemModel::rowsRemoved, this, &ProcessesWidget::updateStatusBar);
 
     // MainWindow controls active/inactive state based on current top tab.
 }
@@ -64,8 +57,7 @@ void ProcessesWidget::setupTable()
 
     QTableView *tv = this->ui->tableView;
     tv->setModel(this->m_proxy);
-    tv->sortByColumn(CFG->ProcessListSortColumn,
-                     static_cast<Qt::SortOrder>(CFG->ProcessListSortOrder));
+    tv->sortByColumn(CFG->ProcessListSortColumn, static_cast<Qt::SortOrder>(CFG->ProcessListSortOrder));
 
     QHeaderView *hv = tv->horizontalHeader();
     hv->setSectionsMovable(true);
@@ -73,8 +65,7 @@ void ProcessesWidget::setupTable()
     hv->setContextMenuPolicy(Qt::CustomContextMenu);
     hv->setSectionResizeMode(QHeaderView::Interactive);
 
-    connect(hv, &QHeaderView::sortIndicatorChanged,
-            this, [](int column, Qt::SortOrder order)
+    connect(hv, &QHeaderView::sortIndicatorChanged, this, [](int column, Qt::SortOrder order)
     {
         CFG->ProcessListSortColumn = column;
         CFG->ProcessListSortOrder  = static_cast<int>(order);
@@ -85,25 +76,24 @@ void ProcessesWidget::setupTable()
     tv->setSelectionMode(QAbstractItemView::ExtendedSelection);
     tv->setContextMenuPolicy(Qt::CustomContextMenu);
 
-    connect(tv, &QTableView::customContextMenuRequested,
-            this, &ProcessesWidget::onTableContextMenu);
+    connect(tv, &QTableView::customContextMenuRequested, this, &ProcessesWidget::onTableContextMenu);
 
     // Reasonable default column widths
-    tv->setColumnWidth(Os::ProcessModel::ColPid,      60);
-    tv->setColumnWidth(Os::ProcessModel::ColName,    160);
-    tv->setColumnWidth(Os::ProcessModel::ColUser,     90);
-    tv->setColumnWidth(Os::ProcessModel::ColState,    90);
-    tv->setColumnWidth(Os::ProcessModel::ColCpu,      65);
-    tv->setColumnWidth(Os::ProcessModel::ColMemRss,   80);
-    tv->setColumnWidth(Os::ProcessModel::ColMemVirt,  80);
-    tv->setColumnWidth(Os::ProcessModel::ColThreads,  65);
-    tv->setColumnWidth(Os::ProcessModel::ColPriority, 65);
-    tv->setColumnWidth(Os::ProcessModel::ColNice,     50);
+    tv->setColumnWidth(OS::ProcessModel::ColPid,      60);
+    tv->setColumnWidth(OS::ProcessModel::ColName,    160);
+    tv->setColumnWidth(OS::ProcessModel::ColUser,     90);
+    tv->setColumnWidth(OS::ProcessModel::ColState,    90);
+    tv->setColumnWidth(OS::ProcessModel::ColCpu,      65);
+    tv->setColumnWidth(OS::ProcessModel::ColMemRss,   80);
+    tv->setColumnWidth(OS::ProcessModel::ColMemVirt,  80);
+    tv->setColumnWidth(OS::ProcessModel::ColThreads,  65);
+    tv->setColumnWidth(OS::ProcessModel::ColPriority, 65);
+    tv->setColumnWidth(OS::ProcessModel::ColNice,     50);
 
     // Hide less-common columns by default
-    hv->hideSection(Os::ProcessModel::ColMemVirt);
-    hv->hideSection(Os::ProcessModel::ColPriority);
-    hv->hideSection(Os::ProcessModel::ColNice);
+    hv->hideSection(OS::ProcessModel::ColMemVirt);
+    hv->hideSection(OS::ProcessModel::ColPriority);
+    hv->hideSection(OS::ProcessModel::ColNice);
 }
 
 void ProcessesWidget::setupRefreshCombo()
@@ -138,8 +128,7 @@ void ProcessesWidget::setActive(bool active)
         this->m_model->Refresh();
         this->updateStatusBar();
         this->m_refreshTimer->start(CFG->RefreshRateMs);
-    }
-    else
+    } else
     {
         this->m_refreshTimer->stop();
     }
@@ -159,7 +148,7 @@ void ProcessesWidget::onTimerTick()
     if (proxyIdx.isValid())
     {
         const QModelIndex srcIdx =
-            this->m_proxy->mapToSource(proxyIdx.sibling(proxyIdx.row(), Os::ProcessModel::ColPid));
+            this->m_proxy->mapToSource(proxyIdx.sibling(proxyIdx.row(), OS::ProcessModel::ColPid));
         selectedPid = this->m_model->data(srcIdx, Qt::UserRole);
     }
 
@@ -170,7 +159,7 @@ void ProcessesWidget::onTimerTick()
     {
         for (int row = 0; row < this->m_model->rowCount(); ++row)
         {
-            const QModelIndex idx = this->m_model->index(row, Os::ProcessModel::ColPid);
+            const QModelIndex idx = this->m_model->index(row, OS::ProcessModel::ColPid);
             if (this->m_model->data(idx, Qt::UserRole) == selectedPid)
             {
                 const QModelIndex proxyRestored =
@@ -201,7 +190,7 @@ void ProcessesWidget::onHeaderContextMenu(const QPoint &pos)
     QHeaderView *hv = this->ui->tableView->horizontalHeader();
     QMenu menu(this);
 
-    for (int col = 0; col < Os::ProcessModel::ColCount; ++col)
+    for (int col = 0; col < OS::ProcessModel::ColCount; ++col)
     {
         const QString title =
             this->m_model->headerData(col, Qt::Horizontal).toString();
@@ -341,7 +330,7 @@ QList<pid_t> ProcessesWidget::selectedPids() const
 {
     QList<pid_t> pids;
     const QModelIndexList rows =
-        this->ui->tableView->selectionModel()->selectedRows(Os::ProcessModel::ColPid);
+        this->ui->tableView->selectionModel()->selectedRows(OS::ProcessModel::ColPid);
     pids.reserve(rows.size());
     for (const QModelIndex &proxyIdx : rows)
     {
@@ -359,15 +348,14 @@ void ProcessesWidget::sendSignalToSelected(int signal)
     for (pid_t pid : pids)
     {
         QString err;
-        if (!Os::ProcessHelper::sendSignal(pid, signal, err))
+        if (!OS::ProcessHelper::sendSignal(pid, signal, err))
         {
             LOG_WARN(err);
             errors << err;
-        }
-        else
+        } else
         {
             LOG_INFO(QString("Sent %1 to PID %2")
-                     .arg(Os::ProcessHelper::signalName(signal))
+                     .arg(OS::ProcessHelper::signalName(signal))
                      .arg(pid));
         }
     }
@@ -399,16 +387,16 @@ void ProcessesWidget::reniceSelected()
     for (pid_t pid : pids)
     {
         QString err;
-        if (!Os::ProcessHelper::renice(pid, nice, err))
+        if (!OS::ProcessHelper::renice(pid, nice, err))
         {
             LOG_WARN(err);
             errors << err;
-        }
-        else
+        } else
         {
             LOG_INFO(QString("Reniced PID %1 to nice=%2").arg(pid).arg(nice));
         }
     }
+
     if (!errors.isEmpty())
     {
         QMessageBox::warning(
