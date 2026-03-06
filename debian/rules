@@ -10,7 +10,7 @@ QMAKE ?= $(shell command -v qmake6 >/dev/null 2>&1 && echo qmake6 || command -v 
 override_dh_auto_configure:
 	mkdir -p debian/build
 	if [ -z "$(QMAKE)" ]; then echo "Error: qmake not found in PATH" >&2; exit 1; fi
-	cd debian/build && $(QMAKE) ../../src/SystemInfo.pro
+	cd debian/build && $(QMAKE) ../../src/
 
 override_dh_auto_build:
 	$(MAKE) -C debian/build -j$(shell nproc)
