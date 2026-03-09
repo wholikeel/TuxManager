@@ -44,7 +44,7 @@ PerformanceWidget::PerformanceWidget(QWidget *parent)
     this->setupSidePanel();
 
     // Wire detail widgets to the data provider
-    this->m_cpuDetail->setProvider(this->m_provider);
+    this->m_cpuDetail->SetProvider(this->m_provider);
     this->m_memDetail->setProvider(this->m_provider);
     this->m_swapDetail->SetProvider(this->m_provider);
 

@@ -39,7 +39,7 @@ namespace Perf
             explicit CpuDetailWidget(QWidget *parent = nullptr);
             ~CpuDetailWidget();
 
-            void setProvider(PerfDataProvider *provider);
+            void SetProvider(PerfDataProvider *provider);
 
         private slots:
             void onUpdated();

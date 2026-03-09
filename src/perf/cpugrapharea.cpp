@@ -63,7 +63,7 @@ void CpuGraphArea::setMode(GraphMode mode)
     this->m_stack->setCurrentIndex(mode == GraphMode::Overall ? 0 : 1);
 }
 
-void CpuGraphArea::setShowKernelTime(bool show)
+void CpuGraphArea::SetShowKernelTime(bool show)
 {
     if (this->m_showKernelTime == show)
         return;
@@ -79,7 +79,7 @@ void CpuGraphArea::setShowKernelTime(bool show)
     // When turning ON the provider's next tick (≤1 s) will populate them.
 }
 
-void CpuGraphArea::updateData(const PerfDataProvider *provider)
+void CpuGraphArea::UpdateData(const PerfDataProvider *provider)
 {
     if (!provider)
         return;

@@ -17,14 +17,13 @@
  */
 
 #include "processfilterproxy.h"
+#include "processmodel.h"
 
 #include <unistd.h>
 
 using namespace OS;
 
-ProcessFilterProxy::ProcessFilterProxy(QObject *parent)
-    : QSortFilterProxyModel(parent)
-    , m_myUid(::getuid())
+ProcessFilterProxy::ProcessFilterProxy(QObject *parent) : QSortFilterProxyModel(parent), m_myUid(::getuid())
 {
     this->setSortRole(Qt::UserRole);
     this->setFilterRole(Qt::DisplayRole);
@@ -37,8 +36,7 @@ void ProcessFilterProxy::ApplyFilters()
     this->invalidateFilter();
 }
 
-bool ProcessFilterProxy::filterAcceptsRow(int sourceRow,
-                                          const QModelIndex &sourceParent) const
+bool ProcessFilterProxy::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
 {
     const auto *model = qobject_cast<const ProcessModel *>(this->sourceModel());
     if (!model)

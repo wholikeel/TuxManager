@@ -47,16 +47,14 @@ void NetworkDetailWidget::SetProvider(PerfDataProvider *provider)
 {
     if (this->m_provider)
     {
-        disconnect(this->m_provider, &PerfDataProvider::updated,
-                   this, &NetworkDetailWidget::onUpdated);
+        disconnect(this->m_provider, &PerfDataProvider::updated, this, &NetworkDetailWidget::onUpdated);
     }
 
     this->m_provider = provider;
 
     if (this->m_provider)
     {
-        connect(this->m_provider, &PerfDataProvider::updated,
-                this, &NetworkDetailWidget::onUpdated);
+        connect(this->m_provider, &PerfDataProvider::updated, this, &NetworkDetailWidget::onUpdated);
         this->onUpdated();
     }
 }
@@ -69,8 +67,7 @@ void NetworkDetailWidget::SetNetworkIndex(int index)
 
 void NetworkDetailWidget::onUpdated()
 {
-    if (!this->m_provider || this->m_networkIndex < 0
-        || this->m_networkIndex >= this->m_provider->NetworkCount())
+    if (!this->m_provider || this->m_networkIndex < 0 || this->m_networkIndex >= this->m_provider->NetworkCount())
     {
         return;
     }
@@ -88,9 +85,7 @@ void NetworkDetailWidget::onUpdated()
     this->ui->titleLabel->setText(tr("NIC (%1)").arg(name));
     this->ui->adapterValueLabel->setText(name);
     this->ui->typeValueLabel->setText(type);
-    this->ui->speedValueLabel->setText(speedMbps > 0
-                                       ? QString::number(speedMbps) + tr(" Mbps")
-                                       : tr("Unknown"));
+    this->ui->speedValueLabel->setText(speedMbps > 0 ? QString::number(speedMbps) + tr(" Mbps") : tr("Unknown"));
     this->ui->ipv4ValueLabel->setText(ipv4.isEmpty() ? tr("—") : ipv4);
     this->ui->ipv6ValueLabel->setText(ipv6.isEmpty() ? tr("—") : ipv6);
 

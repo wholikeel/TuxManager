@@ -19,7 +19,7 @@
 #ifndef OS_PROCESSFILTERPROXY_H
 #define OS_PROCESSFILTERPROXY_H
 
-#include "processmodel.h"
+#include "process.h"
 
 #include <QSortFilterProxyModel>
 #include <sys/types.h>

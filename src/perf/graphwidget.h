@@ -67,9 +67,7 @@ namespace Perf
             void SetHoverTooltipEnabled(bool enabled) { this->m_hoverTooltipEnabled = enabled; }
             void SetSeriesNames(const QString &primary, const QString &secondary = QString());
             void SetValueFormat(ValueFormat fmt) { this->m_valueFormat = fmt; }
-            void SetPercentTooltipAbsolute(double maxAbsoluteValue,
-                                           const QString &unitLabel,
-                                           int precision = 2);
+            void SetPercentTooltipAbsolute(double maxAbsoluteValue, const QString &unitLabel, int precision = 2);
 
             QSize sizeHint() const override { return QSize(200, 80); }
             QSize minimumSizeHint() const override { return QSize(60, 30); }

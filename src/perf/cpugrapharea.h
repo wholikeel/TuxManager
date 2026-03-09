@@ -49,11 +49,11 @@ namespace Perf
             void setMode(GraphMode mode);
             GraphMode mode() const { return this->m_mode; }
 
-            void setShowKernelTime(bool show);
+            void SetShowKernelTime(bool show);
             bool showKernelTime() const { return this->m_showKernelTime; }
 
             /// Call after every PerfDataProvider::updated() signal.
-            void updateData(const PerfDataProvider *provider);
+            void UpdateData(const PerfDataProvider *provider);
 
         signals:
             void contextMenuRequested(const QPoint &globalPos);

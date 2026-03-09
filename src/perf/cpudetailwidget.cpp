@@ -46,7 +46,7 @@ CpuDetailWidget::CpuDetailWidget(QWidget *parent) : QWidget(parent), ui(new Ui::
                 CFG->CpuGraphMode == 1
                 ? CpuGraphArea::GraphMode::PerCore
                 : CpuGraphArea::GraphMode::Overall);
-    this->m_graphArea->setShowKernelTime(CFG->CpuShowKernelTimes);
+    this->m_graphArea->SetShowKernelTime(CFG->CpuShowKernelTimes);
 }
 
 CpuDetailWidget::~CpuDetailWidget()
@@ -54,7 +54,7 @@ CpuDetailWidget::~CpuDetailWidget()
     delete this->ui;
 }
 
-void CpuDetailWidget::setProvider(PerfDataProvider *provider)
+void CpuDetailWidget::SetProvider(PerfDataProvider *provider)
 {
     if (this->m_provider)
         disconnect(this->m_provider, &PerfDataProvider::updated, this, &CpuDetailWidget::onUpdated);
@@ -121,7 +121,7 @@ void CpuDetailWidget::onUpdated()
     }
 
     // Update the graph area
-    this->m_graphArea->updateData(this->m_provider);
+    this->m_graphArea->UpdateData(this->m_provider);
 
     if (this->m_provider->CpuIsVirtualMachine())
     {
@@ -169,7 +169,7 @@ void CpuDetailWidget::onContextMenuRequested(const QPoint &globalPos)
     actKernel->setCheckable(true);
     actKernel->setChecked(this->m_graphArea->showKernelTime());
     connect(actKernel, &QAction::triggered, this, [this](bool checked) {
-        this->m_graphArea->setShowKernelTime(checked);
+        this->m_graphArea->SetShowKernelTime(checked);
         CFG->CpuShowKernelTimes = checked;
     });
 

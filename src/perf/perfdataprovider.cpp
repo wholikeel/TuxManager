@@ -1491,13 +1491,11 @@ void PerfDataProvider::readCpuMetadata()
         {
             this->m_cpuModelName = QString::fromUtf8(val);
             gotModel = true;
-        }
-        else if (!gotBase && key == "cpu MHz")
+        } else if (!gotBase && key == "cpu MHz")
         {
             this->m_cpuBaseMhz = val.toDouble();
             gotBase = true;
-        }
-        else if (!gotFlags && key == "flags")
+        } else if (!gotFlags && key == "flags")
         {
             hasHypervisorFlag = val.contains("hypervisor");
             gotFlags = true;
