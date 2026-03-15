@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
     a.setOrganizationName(kAppName);
     a.setApplicationName(kAppName);
     a.setApplicationVersion(kVersion);
-    a.setWindowIcon(QIcon(":/app_icon.ico"));
+    a.setWindowIcon(QIcon(":/tux_manager_256.ico"));
 
     // ── Command-line parsing (remaining options) ──────────────────────────────
     QCommandLineParser parser;

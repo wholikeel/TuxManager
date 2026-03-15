@@ -1,3 +1,3 @@
-debian/build/tux-manager usr/bin/tux-manager
-src/linux_task_manager_256.ico usr/share/pixmaps/tux-manager.ico
+debian/build/tux-manager usr/bin/
+src/tux_manager_256.ico usr/share/pixmaps/
 debian/tux-manager.desktop usr/share/applications/

@@ -29,6 +29,18 @@ release/
 
 # Binary output
 SystemInfo
+src/tux-manager
+
+# Debian packaging build artifacts
+debian/.debhelper/
+debian/build/
+debian/debhelper-build-stamp
+debian/files
+debian/*.substvars
+debian/tux-manager/
+
+# Packaging outputs
+packaging/output/
 
 # Compiled Python files (tooling)
 __pycache__/

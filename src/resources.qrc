@@ -1,5 +1,5 @@
 <RCC>
     <qresource prefix="/">
-        <file alias="app_icon.ico">linux_task_manager_256.ico</file>
+        <file alias="tux_manager_256.ico">tux_manager_256.ico</file>
     </qresource>
 </RCC>
