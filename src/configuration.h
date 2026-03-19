@@ -67,6 +67,7 @@ class Configuration : public QObject
         bool PerfShowDisks { true };
         bool PerfShowNetwork { true };
         bool PerfShowGpu { true };
+        int PerfGraphWindowSec { 60 };
 
     private:
         explicit Configuration(QObject *parent = nullptr);

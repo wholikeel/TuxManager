@@ -21,10 +21,13 @@
 
 #include "configuration.h"
 #include "logger.h"
+#include "perf/graphwidget.h"
 
 #include <QAction>
 #include <QHBoxLayout>
+#include <QLabel>
 #include <QMenu>
+#include <QRegularExpression>
 
 // ── Construction ──────────────────────────────────────────────────────────────
 
@@ -59,6 +62,8 @@ PerformanceWidget::PerformanceWidget(QWidget *parent)
     connect(this->m_sidePanel, &Perf::SidePanel::itemContextMenuRequested,
             this, &PerformanceWidget::onSidePanelContextMenu);
 
+    this->tagTimeAxisLabels();
+    this->applyGraphWindowSeconds();
     this->applyPanelVisibility();
     this->updateSamplingPolicy();
     this->m_provider->SetProcessStatsEnabled(this->m_sidePanel->GetCurrentIndex() == this->m_cpuPanelIndex
@@ -348,9 +353,40 @@ void PerformanceWidget::onSidePanelContextMenu(int /*index*/, const QPoint &glob
     gpu->setCheckable(true);
     gpu->setChecked(CFG->PerfShowGpu);
 
+    menu.addSeparator();
+    QMenu *timeMenu = menu.addMenu(tr("Graph time"));
+    struct TimeChoice
+    {
+        int sec;
+        const char *label;
+    };
+    const TimeChoice choices[] = {
+        { 60,  "1 minute" },
+        { 120, "2 minutes" },
+        { 300, "5 minutes" },
+        { 900, "15 minutes" }
+    };
+    for (const TimeChoice &c : choices)
+    {
+        QAction *a = timeMenu->addAction(tr(c.label));
+        a->setCheckable(true);
+        a->setChecked(CFG->PerfGraphWindowSec == c.sec);
+        a->setData(c.sec);
+    }
+
     QAction *picked = menu.exec(globalPos);
     if (!picked)
         return;
+
+    const int requestedWindow = picked->data().toInt();
+    if (requestedWindow == 60 || requestedWindow == 120 || requestedWindow == 300 || requestedWindow == 900)
+    {
+        CFG->PerfGraphWindowSec = requestedWindow;
+        this->applyGraphWindowSeconds();
+        if (this->m_active)
+            this->onProviderUpdated();
+        return;
+    }
 
     bool showCpu = CFG->PerfShowCpu;
     bool showMemory = CFG->PerfShowMemory;
@@ -436,4 +472,42 @@ bool PerformanceWidget::anyPanelVisibleAfterToggle(bool cpu,
                                                    bool gpu) const
 {
     return cpu || memory || swap || disks || network || gpu;
+}
+
+void PerformanceWidget::tagTimeAxisLabels()
+{
+    static const QRegularExpression kSecondsRe("^[0-9]+\\s+seconds$");
+    for (QLabel *label : this->findChildren<QLabel *>())
+    {
+        if (!label)
+            continue;
+        if (kSecondsRe.match(label->text()).hasMatch())
+            label->setProperty("perfTimeAxisLabel", true);
+    }
+}
+
+void PerformanceWidget::applyGraphWindowSeconds()
+{
+    const int sec = CFG->PerfGraphWindowSec;
+    for (Perf::GraphWidget *g : this->findChildren<Perf::GraphWidget *>())
+    {
+        if (g)
+            g->SetSampleCapacity(sec);
+    }
+
+    QString labelText;
+    if (sec % 60 == 0)
+    {
+        const int minutes = sec / 60;
+        labelText = (minutes == 1) ? tr("1 minute") : tr("%1 minutes").arg(minutes);
+    }
+    else
+    {
+        labelText = tr("%1 seconds").arg(sec);
+    }
+    for (QLabel *label : this->findChildren<QLabel *>())
+    {
+        if (label && label->property("perfTimeAxisLabel").toBool())
+            label->setText(labelText);
+    }
 }

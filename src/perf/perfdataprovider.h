@@ -29,8 +29,8 @@
 
 namespace Perf
 {
-    /// Number of historical samples kept per metric.
-    static constexpr int HISTORY_SIZE = 60;
+    /// Number of historical samples kept per metric (max graph window: 15 min at 1 Hz).
+    static constexpr int HISTORY_SIZE = 900;
 
     /// Periodically samples /proc/stat (CPU) and /proc/meminfo (memory).
     /// All widgets that display performance data connect to the updated() signal

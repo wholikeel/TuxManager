@@ -82,6 +82,8 @@ class PerformanceWidget : public QWidget
         void setupDiskPanels();
         void setupNetworkPanels();
         void setupGpuPanels();
+        void tagTimeAxisLabels();
+        void applyGraphWindowSeconds();
         void applyPanelVisibility();
         void updateSamplingPolicy();
         bool anyPanelVisibleAfterToggle(bool cpu,

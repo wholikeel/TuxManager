@@ -18,6 +18,7 @@
 
 #include "cpugrapharea.h"
 
+#include "configuration.h"
 #include "graphwidget.h"
 #include "perfdataprovider.h"
 
@@ -32,7 +33,7 @@ CpuGraphArea::CpuGraphArea(QWidget *parent) : QWidget(parent), m_stack(new QStac
 {
     // Page 0 — single aggregate graph
     this->m_overallGraph = new GraphWidget(this->m_stack);
-    this->m_overallGraph->SetSampleCapacity(HISTORY_SIZE);
+    this->m_overallGraph->SetSampleCapacity(CFG->PerfGraphWindowSec);
     this->m_overallGraph->SetSeriesNames(tr("CPU"), tr("Kernel"));
     this->m_overallGraph->SetValueFormat(GraphWidget::ValueFormat::Percent);
     this->m_stack->addWidget(this->m_overallGraph);  // index 0
@@ -146,7 +147,7 @@ void CpuGraphArea::ensureCoreGraphs(int count)
     for (int i = 0; i < count; ++i)
     {
         GraphWidget *g = new GraphWidget(this->m_perCoreContainer);
-        g->SetSampleCapacity(HISTORY_SIZE);
+        g->SetSampleCapacity(CFG->PerfGraphWindowSec);
         g->SetGridColumns(2);
         g->SetGridRows(2);
         g->SetSeriesNames(tr("CPU %1").arg(i), tr("Kernel"));
