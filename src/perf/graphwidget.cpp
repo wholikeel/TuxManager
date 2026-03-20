@@ -71,9 +71,7 @@ void GraphWidget::SetSampleCapacity(int samples)
     this->update();
 }
 
-void GraphWidget::SetPercentTooltipAbsolute(double maxAbsoluteValue,
-                                            const QString &unitLabel,
-                                            int precision)
+void GraphWidget::SetPercentTooltipAbsolute(double maxAbsoluteValue, const QString &unitLabel, int precision)
 {
     this->m_percentTooltipAbsoluteEnabled = (maxAbsoluteValue > 0.0);
     this->m_percentTooltipAbsoluteMax = qMax(0.0, maxAbsoluteValue);

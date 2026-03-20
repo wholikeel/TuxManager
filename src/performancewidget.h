@@ -86,12 +86,6 @@ class PerformanceWidget : public QWidget
         void applyGraphWindowSeconds();
         void applyPanelVisibility();
         void updateSamplingPolicy();
-        bool anyPanelVisibleAfterToggle(bool cpu,
-                                        bool memory,
-                                        bool swap,
-                                        bool disks,
-                                        bool network,
-                                        bool gpu) const;
         static QString formatNetRate(double bytesPerSec);
 };
 

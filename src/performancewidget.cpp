@@ -59,15 +59,13 @@ PerformanceWidget::PerformanceWidget(QWidget *parent)
     {
         this->m_provider->SetProcessStatsEnabled(index == this->m_cpuPanelIndex && CFG->PerfShowCpu);
     });
-    connect(this->m_sidePanel, &Perf::SidePanel::itemContextMenuRequested,
-            this, &PerformanceWidget::onSidePanelContextMenu);
+    connect(this->m_sidePanel, &Perf::SidePanel::itemContextMenuRequested, this, &PerformanceWidget::onSidePanelContextMenu);
 
     this->tagTimeAxisLabels();
     this->applyGraphWindowSeconds();
     this->applyPanelVisibility();
     this->updateSamplingPolicy();
-    this->m_provider->SetProcessStatsEnabled(this->m_sidePanel->GetCurrentIndex() == this->m_cpuPanelIndex
-                                             && CFG->PerfShowCpu);
+    this->m_provider->SetProcessStatsEnabled(this->m_sidePanel->GetCurrentIndex() == this->m_cpuPanelIndex && CFG->PerfShowCpu);
 
     this->SetActive(false);
 
@@ -212,10 +210,7 @@ void PerformanceWidget::onProviderUpdated()
     const int    pct     = total > 0
                            ? static_cast<int>(static_cast<double>(used) / total * 100.0)
                            : 0;
-    const QString memSub = QString("%1/%2 GB (%3%)")
-                           .arg(usedGb,  0, 'f', 1)
-                           .arg(totalGb, 0, 'f', 1)
-                           .arg(pct);
+    const QString memSub = QString("%1/%2 GB (%3%)").arg(usedGb,  0, 'f', 1).arg(totalGb, 0, 'f', 1).arg(pct);
     if (CFG->PerfShowMemory)
     {
         if (auto *item = this->m_sidePanel->GetItemAt(this->m_memoryPanelIndex))
@@ -232,10 +227,7 @@ void PerformanceWidget::onProviderUpdated()
                         : 0;
     QString swapSub;
     if (swapTotal > 0)
-        swapSub = QString("%1/%2 GB (%3%)")
-                  .arg(swapUsedGb, 0, 'f', 1)
-                  .arg(swapTotalGb, 0, 'f', 1)
-                  .arg(swapPct);
+        swapSub = QString("%1/%2 GB (%3%)").arg(swapUsedGb, 0, 'f', 1).arg(swapTotalGb, 0, 'f', 1).arg(swapPct);
     else
         swapSub = tr("Off");
     if (CFG->PerfShowSwap)
@@ -254,9 +246,7 @@ void PerformanceWidget::onProviderUpdated()
             if (!item)
                 continue;
 
-            const QString diskSub = tr("%1 %2")
-                                    .arg(this->m_provider->DiskType(i))
-                                    .arg(QString::number(this->m_provider->DiskActivePercent(i), 'f', 0) + "%");
+            const QString diskSub = tr("%1 %2").arg(this->m_provider->DiskType(i)).arg(QString::number(this->m_provider->DiskActivePercent(i), 'f', 0) + "%");
             item->Update(diskSub, this->m_provider->DiskActiveHistory(i));
         }
     }
@@ -271,10 +261,7 @@ void PerformanceWidget::onProviderUpdated()
             if (!item)
                 continue;
 
-            const QString gpuSub = tr("%1%2")
-                                   .arg(QString::number(this->m_provider->GpuUtilPercent(i), 'f', 0))
-                                   .arg("%");
-            item->Update(gpuSub, this->m_provider->GpuUtilHistory(i));
+            item->Update(tr("%1%2").arg(QString::number(this->m_provider->GpuUtilPercent(i), 'f', 0)).arg("%"), this->m_provider->GpuUtilHistory(i));
         }
     }
 
@@ -408,7 +395,7 @@ void PerformanceWidget::onSidePanelContextMenu(int /*index*/, const QPoint &glob
     else if (picked == gpu)
         showGpu = gpu->isChecked();
 
-    if (!this->anyPanelVisibleAfterToggle(showCpu, showMemory, showSwap, showDisks, showNetwork, showGpu))
+    if (!(showCpu || showMemory || showSwap || showDisks || showNetwork || showGpu))
         return;
 
     CFG->PerfShowCpu = showCpu;
@@ -426,15 +413,8 @@ void PerformanceWidget::onSidePanelContextMenu(int /*index*/, const QPoint &glob
 
 void PerformanceWidget::applyPanelVisibility()
 {
-    if (!this->anyPanelVisibleAfterToggle(CFG->PerfShowCpu,
-                                          CFG->PerfShowMemory,
-                                          CFG->PerfShowSwap,
-                                          CFG->PerfShowDisks,
-                                          CFG->PerfShowNetwork,
-                                          CFG->PerfShowGpu))
-    {
+    if (!(CFG->PerfShowCpu || CFG->PerfShowMemory || CFG->PerfShowSwap || CFG->PerfShowDisks || CFG->PerfShowNetwork || CFG->PerfShowGpu))
         CFG->PerfShowCpu = true;
-    }
 
     this->m_sidePanel->SetItemVisible(this->m_cpuPanelIndex, CFG->PerfShowCpu);
     this->m_sidePanel->SetItemVisible(this->m_memoryPanelIndex, CFG->PerfShowMemory);
@@ -460,18 +440,7 @@ void PerformanceWidget::updateSamplingPolicy()
     this->m_provider->SetDiskSamplingEnabled(CFG->PerfShowDisks);
     this->m_provider->SetNetworkSamplingEnabled(CFG->PerfShowNetwork);
     this->m_provider->SetGpuSamplingEnabled(CFG->PerfShowGpu);
-    this->m_provider->SetProcessStatsEnabled(CFG->PerfShowCpu
-                                             && this->m_sidePanel->GetCurrentIndex() == this->m_cpuPanelIndex);
-}
-
-bool PerformanceWidget::anyPanelVisibleAfterToggle(bool cpu,
-                                                   bool memory,
-                                                   bool swap,
-                                                   bool disks,
-                                                   bool network,
-                                                   bool gpu) const
-{
-    return cpu || memory || swap || disks || network || gpu;
+    this->m_provider->SetProcessStatsEnabled(CFG->PerfShowCpu && this->m_sidePanel->GetCurrentIndex() == this->m_cpuPanelIndex);
 }
 
 void PerformanceWidget::tagTimeAxisLabels()

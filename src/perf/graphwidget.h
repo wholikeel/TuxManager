@@ -51,7 +51,6 @@ namespace Perf
             /// Optional secondary (kernel-time) history drawn as a darker overlay.
             /// Pass an empty vector to disable.
             void SetSecondaryHistory(const QVector<double> &data2);
-            const QVector<double> &secondaryHistory() const { return this->m_data2; }
 
             /// Optional: change the line / fill colour pair from the default blue.
             void SetColor(QColor line, QColor fill);

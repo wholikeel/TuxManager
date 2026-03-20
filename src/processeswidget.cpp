@@ -372,17 +372,12 @@ void ProcessesWidget::sendSignalToSelected(int signal)
             errors << err;
         } else
         {
-            LOG_INFO(QString("Sent %1 to PID %2")
-                     .arg(OS::ProcessHelper::signalName(signal))
-                     .arg(pid));
+            LOG_INFO(QString("Sent %1 to PID %2").arg(OS::ProcessHelper::signalName(signal)).arg(pid));
         }
     }
     if (!errors.isEmpty())
     {
-        QMessageBox::warning(
-            this,
-            tr("Signal failed"),
-            errors.join('\n'));
+        QMessageBox::warning(this, tr("Signal failed"), errors.join('\n'));
     }
 }
 
@@ -393,11 +388,7 @@ void ProcessesWidget::reniceSelected()
         return;
 
     bool ok;
-    const int nice = QInputDialog::getInt(
-        this,
-        tr("Change priority"),
-        tr("Nice value (-20 = highest priority, 19 = lowest):"),
-        0, -20, 19, 1, &ok);
+    const int nice = QInputDialog::getInt(this, tr("Change priority"), tr("Nice value (-20 = highest priority, 19 = lowest):"), 0, -20, 19, 1, &ok);
     if (!ok)
         return;
 
@@ -417,9 +408,6 @@ void ProcessesWidget::reniceSelected()
 
     if (!errors.isEmpty())
     {
-        QMessageBox::warning(
-            this,
-            tr("Renice failed"),
-            errors.join('\n'));
+        QMessageBox::warning(this, tr("Renice failed"), errors.join('\n'));
     }
 }
