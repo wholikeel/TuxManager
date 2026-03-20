@@ -86,9 +86,9 @@ void CpuGraphArea::UpdateData(const PerfDataProvider *provider)
         return;
 
     // ── Aggregate graph ───────────────────────────────────────────────────────
-    this->m_overallGraph->SetHistory(provider->CpuHistory());
+    this->m_overallGraph->SetHistoryRef(provider->CpuHistory());
     if (this->m_showKernelTime)
-        this->m_overallGraph->SetSecondaryHistory(provider->CpuKernelHistory());
+        this->m_overallGraph->SetSecondaryHistoryRef(provider->CpuKernelHistory());
     else
         this->m_overallGraph->SetSecondaryHistory({});
 
@@ -100,9 +100,9 @@ void CpuGraphArea::UpdateData(const PerfDataProvider *provider)
         for (int i = 0; i < cores; ++i)
         {
             GraphWidget *g = this->m_coreGraphs.at(i);
-            g->SetHistory(provider->CoreHistory(i));
+            g->SetHistoryRef(provider->CoreHistory(i));
             if (this->m_showKernelTime)
-                g->SetSecondaryHistory(provider->CoreKernelHistory(i));
+                g->SetSecondaryHistoryRef(provider->CoreKernelHistory(i));
             else
                 g->SetSecondaryHistory({});
 

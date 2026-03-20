@@ -39,14 +39,30 @@ void GraphWidget::SetHistory(const QVector<double> &data, double maxVal)
     // Advance grid phase on every sample tick, even if values are unchanged.
     // This keeps the time axis moving continuously (task-manager behavior).
     ++this->m_historyTick;
+    this->m_dataRef = nullptr;
     this->m_data   = data;
+    this->m_maxVal = (maxVal > 0.0) ? maxVal : 100.0;
+    this->update();
+}
+
+void GraphWidget::SetHistoryRef(const QVector<double> &data, double maxVal)
+{
+    ++this->m_historyTick;
+    this->m_dataRef = &data;
     this->m_maxVal = (maxVal > 0.0) ? maxVal : 100.0;
     this->update();
 }
 
 void GraphWidget::SetSecondaryHistory(const QVector<double> &data2)
 {
+    this->m_data2Ref = nullptr;
     this->m_data2 = data2;
+    this->update();
+}
+
+void GraphWidget::SetSecondaryHistoryRef(const QVector<double> &data2)
+{
+    this->m_data2Ref = &data2;
     this->update();
 }
 
@@ -134,10 +150,11 @@ void GraphWidget::paintEvent(QPaintEvent * /*event*/)
     }
 
     // ── Data ──────────────────────────────────────────────────────────────────
-    if (this->m_data.isEmpty())
+    const QVector<double> *primary = this->primarySource();
+    if (!primary || primary->isEmpty())
         return;
 
-    const int n = this->m_data.size();
+    const int n = primary->size();
 
     // Keep a fixed-width time axis:
     // - when history is short, right-align it (empty area on the left)
@@ -150,7 +167,7 @@ void GraphWidget::paintEvent(QPaintEvent * /*event*/)
     QPainterPath path;
     for (int i = 0; i < visibleCount; ++i)
     {
-        const double val = qBound(0.0, this->m_data.at(visibleStart + i), this->m_maxVal);
+        const double val = qBound(0.0, primary->at(visibleStart + i), this->m_maxVal);
         const double fx  = (slotOffset + i) * stepX;
         const double fy  = h - (val / this->m_maxVal) * h;
 
@@ -171,16 +188,17 @@ void GraphWidget::paintEvent(QPaintEvent * /*event*/)
     p.drawPath(fillPath);
 
     // Kernel-time overlay (secondary data2) — drawn on top as a darker fill
-    if (!this->m_data2.isEmpty())
+    const QVector<double> *secondary = this->secondarySource();
+    if (secondary && !secondary->isEmpty())
     {
-        const int n2 = this->m_data2.size();
+        const int n2 = secondary->size();
         const int visibleStart2 = qMax(0, n2 - sampleCount);
         const int visibleCount2 = n2 - visibleStart2;
         const int slotOffset2 = qMax(0, sampleCount - visibleCount2);
         QPainterPath kPath;
         for (int i = 0; i < visibleCount2; ++i)
         {
-            const double val = qBound(0.0, this->m_data2.at(visibleStart2 + i), this->m_maxVal);
+            const double val = qBound(0.0, secondary->at(visibleStart2 + i), this->m_maxVal);
             const double fx  = (slotOffset2 + i) * stepX;
             const double fy  = h - (val / this->m_maxVal) * h;
             if (i == 0)
@@ -247,19 +265,21 @@ void GraphWidget::mouseMoveEvent(QMouseEvent *event)
 
     if (this->m_hoverTooltipEnabled)
     {
-        const int idx1 = sampleIndexForSlot(this->m_data.size(), slot, sampleCount);
-        const int idx2 = sampleIndexForSlot(this->m_data2.size(), slot, sampleCount);
+        const QVector<double> *primary = this->primarySource();
+        const QVector<double> *secondary = this->secondarySource();
+        const int idx1 = sampleIndexForSlot(primary ? primary->size() : 0, slot, sampleCount);
+        const int idx2 = sampleIndexForSlot(secondary ? secondary->size() : 0, slot, sampleCount);
 
         if (idx1 >= 0 || idx2 >= 0)
         {
             QString tip;
             if (idx1 >= 0)
-                tip += tr("%1: %2").arg(this->m_primaryName, this->formatValue(this->m_data.at(idx1)));
+                tip += tr("%1: %2").arg(this->m_primaryName, this->formatValue(primary->at(idx1)));
             if (idx2 >= 0)
             {
                 if (!tip.isEmpty())
                     tip += "\n";
-                tip += tr("%1: %2").arg(this->m_secondaryName, this->formatValue(this->m_data2.at(idx2)));
+                tip += tr("%1: %2").arg(this->m_secondaryName, this->formatValue(secondary->at(idx2)));
             }
             const int secAgo = sampleCount - 1 - slot;
             if (!tip.isEmpty())
@@ -298,6 +318,16 @@ int GraphWidget::sampleIndexForSlot(int size, int slot, int sampleCount)
     if (slot < slotOffset || slot >= slotOffset + visibleCount)
         return -1;
     return visibleStart + (slot - slotOffset);
+}
+
+const QVector<double> *GraphWidget::primarySource() const
+{
+    return this->m_dataRef ? this->m_dataRef : &this->m_data;
+}
+
+const QVector<double> *GraphWidget::secondarySource() const
+{
+    return this->m_data2Ref ? this->m_data2Ref : &this->m_data2;
 }
 
 QString GraphWidget::formatValue(double v) const

@@ -99,7 +99,7 @@ void MemoryDetailWidget::onUpdated()
     this->ui->compositionBar->SetSegments(used, dirty, cached, free, total);
 
     this->ui->graphWidget->SetPercentTooltipAbsolute(static_cast<double>(total) / (1024.0 * 1024.0), tr("GB"), 2);
-    this->ui->graphWidget->SetHistory(this->m_provider->MemHistory());
+    this->ui->graphWidget->SetHistoryRef(this->m_provider->MemHistory());
 }
 
 // static

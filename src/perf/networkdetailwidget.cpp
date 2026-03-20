@@ -98,8 +98,8 @@ void NetworkDetailWidget::onUpdated()
     for (double v : txHistory)
         maxRate = std::max(maxRate, v);
 
-    this->ui->throughputGraphWidget->SetHistory(rxHistory, maxRate);
-    this->ui->throughputGraphWidget->SetSecondaryHistory(txHistory);
+    this->ui->throughputGraphWidget->SetHistoryRef(rxHistory, maxRate);
+    this->ui->throughputGraphWidget->SetSecondaryHistoryRef(txHistory);
     this->ui->throughputGraphMaxLabel->setText(formatRate(maxRate));
 }
 

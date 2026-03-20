@@ -47,10 +47,14 @@ namespace Perf
 
             /// Replace the displayed history and trigger a repaint.
             void SetHistory(const QVector<double> &data, double maxVal = 100.0);
+            /// Bind to an external history vector (shared source of truth, no copy).
+            void SetHistoryRef(const QVector<double> &data, double maxVal = 100.0);
 
             /// Optional secondary (kernel-time) history drawn as a darker overlay.
             /// Pass an empty vector to disable.
             void SetSecondaryHistory(const QVector<double> &data2);
+            /// Bind secondary history to an external vector (no copy).
+            void SetSecondaryHistoryRef(const QVector<double> &data2);
 
             /// Optional: change the line / fill colour pair from the default blue.
             void SetColor(QColor line, QColor fill);
@@ -80,6 +84,8 @@ namespace Perf
         private:
             QVector<double> m_data;
             QVector<double> m_data2;            ///< kernel-time overlay (optional)
+            const QVector<double> *m_dataRef { nullptr };
+            const QVector<double> *m_data2Ref { nullptr };
             double          m_maxVal    { 100.0 };
 
             QColor          m_lineColor  { 0x00, 0xbc, 0xff };  // bright blue
@@ -103,6 +109,8 @@ namespace Perf
             int             m_percentTooltipAbsolutePrecision { 2 };
 
             static int sampleIndexForSlot(int size, int slot, int sampleCount);
+            const QVector<double> *primarySource() const;
+            const QVector<double> *secondarySource() const;
             QString formatValue(double v) const;
     };
 } // namespace Perf

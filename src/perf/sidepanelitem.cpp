@@ -48,7 +48,7 @@ SidePanelItem::SidePanelItem(const QString &title, QWidget *parent) : QWidget(pa
 void SidePanelItem::Update(const QString &subtitle, const QVector<double> &history, double maxVal)
 {
     this->m_subtitle = subtitle;
-    this->m_graph->SetHistory(history, maxVal);
+    this->m_graph->SetHistoryRef(history, maxVal);
     this->repaint();  // repaint own text; graph repaints itself inside setHistory
 }
 
