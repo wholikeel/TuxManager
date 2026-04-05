@@ -14,8 +14,9 @@ A Linux Task Manager alternative built with Qt6, inspired by the Windows Task Ma
 ### qmake
 
 ```bash
+# cd to root of the repo and then:
 mkdir build && cd build
-qmake ..
+qmake6 ../src
 make -j$(nproc)
 ./tux-manager
 ```
