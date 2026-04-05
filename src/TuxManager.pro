@@ -10,6 +10,7 @@ TARGET = tux-manager
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    colorscheme.cpp \
     main.cpp \
     mainwindow.cpp \
     configuration.cpp \
@@ -40,6 +41,7 @@ SOURCES += \
     perf/memorydetailwidget.cpp
 
 HEADERS += \
+    colorscheme.h \
     mainwindow.h \
     configuration.h \
     logger.h \

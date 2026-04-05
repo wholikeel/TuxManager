@@ -17,6 +17,7 @@
  */
 
 #include "memorybar.h"
+#include "../colorscheme.h"
 
 #include <QEvent>
 #include <QHelpEvent>
@@ -25,13 +26,6 @@
 #include <QToolTip>
 
 using namespace Perf;
-
-// Segment colours (dark-theme)
-static const QColor kColUsed  (0xcc, 0x44, 0xcc);        // bright purple — matches graph
-static const QColor kColDirty (0xbb, 0x88, 0x00);        // amber
-static const QColor kColCached(0x55, 0x22, 0x55);        // muted dark purple
-static const QColor kColFree  (0x11, 0x08, 0x11);        // near-background
-static const QColor kColBorder(0x88, 0x44, 0x88);        // subtle purple border
 
 MemoryBar::MemoryBar(QWidget *parent) : QWidget(parent)
 {
@@ -52,6 +46,7 @@ void MemoryBar::SetSegments(qint64 used, qint64 dirty, qint64 cached, qint64 fre
 
 void MemoryBar::paintEvent(QPaintEvent * /*event*/)
 {
+    const ColorScheme *scheme = ColorScheme::GetCurrent();
     QPainter p(this);
     const QRect r = this->rect().adjusted(0, 0, -1, -1);   // leave 1px for border
     int wUsed = 0, wDirty = 0, wCached = 0, wFree = 0;
@@ -68,13 +63,13 @@ void MemoryBar::paintEvent(QPaintEvent * /*event*/)
         x += sw;
     };
 
-    drawSeg(wUsed,   kColUsed);
-    drawSeg(wDirty,  kColDirty);
-    drawSeg(wCached, kColCached);
-    drawSeg(wFree,   kColFree);
+    drawSeg(wUsed,   scheme->MemoryBarUsedColor);
+    drawSeg(wDirty,  scheme->MemoryBarDirtyColor);
+    drawSeg(wCached, scheme->MemoryBarCachedColor);
+    drawSeg(wFree,   scheme->MemoryBarFreeColor);
 
     // Border
-    p.setPen(QPen(kColBorder, 1));
+    p.setPen(QPen(scheme->MemoryBarBorderColor, 1));
     p.setBrush(Qt::NoBrush);
     p.drawRect(this->rect().adjusted(0, 0, -1, -1));
 }
@@ -176,4 +171,3 @@ QString MemoryBar::segmentTooltip(Segment seg) const
             .arg(this->formatKb(value))
             .arg(QString::number(pct, 'f', 1));
 }
-

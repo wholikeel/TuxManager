@@ -17,6 +17,7 @@
  */
 
 #include "graphwidget.h"
+#include "../colorscheme.h"
 
 #include <cmath>
 #include <QMouseEvent>
@@ -30,6 +31,10 @@ using namespace Perf;
 
 GraphWidget::GraphWidget(QWidget *parent) : QWidget(parent)
 {
+    const ColorScheme *scheme = ColorScheme::GetCurrent();
+    this->m_lineColor = scheme->CpuGraphLineColor;
+    this->m_fillColor = scheme->CpuGraphFillColor;
+    this->m_fillColor2 = scheme->CpuGraphSecondaryFillColor;
     this->setAutoFillBackground(false);
     this->setMouseTracking(true);
 }
@@ -74,10 +79,11 @@ void GraphWidget::SetSeriesNames(const QString &primary, const QString &secondar
         this->m_secondaryName = secondary;
 }
 
-void GraphWidget::SetColor(QColor line, QColor fill)
+void GraphWidget::SetColor(QColor line, QColor fill, QColor fill2)
 {
     this->m_lineColor = line;
     this->m_fillColor = fill;
+    this->m_fillColor2 = fill2.isValid() ? fill2 : fill.darker(160);
     this->update();
 }
 
@@ -107,7 +113,7 @@ void GraphWidget::paintEvent(QPaintEvent * /*event*/)
     // ── Background ────────────────────────────────────────────────────────────
     const QPalette pal = this->palette();
     const QColor bg = pal.color(QPalette::Base);
-    const bool darkTheme = bg.lightness() <= 127;
+    const ColorScheme *scheme = ColorScheme::GetCurrent();
     p.fillRect(r, bg);
 
     // Fixed time axis slot geometry.
@@ -115,11 +121,7 @@ void GraphWidget::paintEvent(QPaintEvent * /*event*/)
     const double stepX = static_cast<double>(w) / static_cast<double>(sampleCount - 1);
 
     // ── Grid ──────────────────────────────────────────────────────────────────
-    QColor gridColor = darkTheme ? pal.color(QPalette::Midlight)
-                                 : pal.color(QPalette::Text);
-    if (gridColor.alpha() == 255)
-        gridColor.setAlpha(darkTheme ? 150 : 62);
-    p.setPen(QPen(gridColor, 1));
+    p.setPen(QPen(scheme->GraphGridColor, 1));
 
     // Denser grid on larger widgets while keeping existing configured minimum.
     const int targetGridPxX = 80;
@@ -232,8 +234,7 @@ void GraphWidget::paintEvent(QPaintEvent * /*event*/)
         QFont f = p.font();
         f.setPointSizeF(qMax(7.0, f.pointSizeF() - 1.0));
         p.setFont(f);
-        p.setPen(darkTheme ? QColor(245, 245, 245, 220)
-                           : QColor(35, 35, 35, 220));
+        p.setPen(scheme->GraphOverlayTextColor);
         p.drawText(r.adjusted(4, 2, -4, -2),
                    Qt::AlignLeft | Qt::AlignTop,
                    this->m_overlayText);

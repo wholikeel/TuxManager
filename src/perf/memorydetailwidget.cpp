@@ -18,15 +18,62 @@
 
 #include "memorydetailwidget.h"
 #include "ui_memorydetailwidget.h"
+#include "../colorscheme.h"
+
+#include <QGridLayout>
+#include <QLabel>
 
 using namespace Perf;
+
+namespace
+{
+void appendColorStyle(QWidget *widget, const QColor &color)
+{
+    QString style = widget->styleSheet();
+    if (!style.isEmpty() && !style.trimmed().endsWith(';'))
+        style += ';';
+    style += QString(" color: %1;").arg(color.name(QColor::HexArgb));
+    widget->setStyleSheet(style);
+}
+}
 
 MemoryDetailWidget::MemoryDetailWidget(QWidget *parent) : QWidget(parent), ui(new Ui::MemoryDetailWidget)
 {
     this->ui->setupUi(this);
+    const ColorScheme *scheme = ColorScheme::GetCurrent();
+
+    appendColorStyle(this->ui->titleLabel, scheme->MemoryTitleColor);
+    appendColorStyle(this->ui->totalLabel, scheme->MemoryHeaderValueColor);
+    appendColorStyle(this->ui->timeLeftLabel, scheme->AxisLabelColor);
+    appendColorStyle(this->ui->timeRightLabel, scheme->AxisLabelColor);
+    appendColorStyle(this->ui->compositionLabel, scheme->StatLabelColor);
+    appendColorStyle(this->ui->legendUsedDot, scheme->MemoryLegendUsedColor);
+    appendColorStyle(this->ui->legendUsedLabel, scheme->MemoryLegendTextColor);
+    appendColorStyle(this->ui->legendDirtyDot, scheme->MemoryLegendDirtyColor);
+    appendColorStyle(this->ui->legendDirtyLabel, scheme->MemoryLegendTextColor);
+    appendColorStyle(this->ui->legendCachedDot, scheme->MemoryLegendCachedColor);
+    appendColorStyle(this->ui->legendCachedLabel, scheme->MemoryLegendTextColor);
+    appendColorStyle(this->ui->legendFreeDot, scheme->MemoryLegendFreeColor);
+    appendColorStyle(this->ui->legendFreeLabel, scheme->MemoryLegendTextColor);
+
+    if (QGridLayout *statsGrid = this->findChild<QGridLayout *>("statsGrid"))
+    {
+        for (int row = 0; row < statsGrid->rowCount(); ++row)
+        {
+            for (int column = 0; column < statsGrid->columnCount(); column += 2)
+            {
+                if (QLayoutItem *item = statsGrid->itemAtPosition(row, column))
+                {
+                    if (QLabel *label = qobject_cast<QLabel *>(item->widget()))
+                        appendColorStyle(label, scheme->StatLabelColor);
+                }
+            }
+        }
+    }
 
     // Memory graph: purple / magenta
-    this->ui->graphWidget->SetColor(QColor(0xcc, 0x44, 0xcc), QColor(0x66, 0x11, 0x66, 130));
+    this->ui->graphWidget->SetColor(scheme->MemoryGraphLineColor,
+                                    scheme->MemoryGraphFillColor);
     this->ui->graphWidget->SetSampleCapacity(HISTORY_SIZE);
     this->ui->graphWidget->SetGridColumns(6);
     this->ui->graphWidget->SetGridRows(4);

@@ -19,19 +19,56 @@
 #include "cpudetailwidget.h"
 #include "ui_cpudetailwidget.h"
 #include "configuration.h"
+#include "../colorscheme.h"
 
 #include <QAction>
 #include <QApplication>
 #include <QClipboard>
 #include <QFile>
+#include <QGridLayout>
+#include <QLabel>
 #include <QMenu>
 #include <QVBoxLayout>
 
 using namespace Perf;
 
+namespace
+{
+void appendColorStyle(QWidget *widget, const QColor &color)
+{
+    QString style = widget->styleSheet();
+    if (!style.isEmpty() && !style.trimmed().endsWith(';'))
+        style += ';';
+    style += QString(" color: %1;").arg(color.name(QColor::HexArgb));
+    widget->setStyleSheet(style);
+}
+}
+
 CpuDetailWidget::CpuDetailWidget(QWidget *parent) : QWidget(parent), ui(new Ui::CpuDetailWidget)
 {
     this->ui->setupUi(this);
+    const ColorScheme *scheme = ColorScheme::GetCurrent();
+
+    appendColorStyle(this->ui->titleLabel, scheme->CpuTitleColor);
+    appendColorStyle(this->ui->modelNameLabel, scheme->MutedTextColor);
+    appendColorStyle(this->ui->utilizationLabel, scheme->CpuHeaderValueColor);
+    appendColorStyle(this->ui->timeLeftLabel, scheme->AxisLabelColor);
+    appendColorStyle(this->ui->timeRightLabel, scheme->AxisLabelColor);
+
+    if (QGridLayout *statsGrid = this->findChild<QGridLayout *>("statsGrid"))
+    {
+        for (int row = 0; row < statsGrid->rowCount(); ++row)
+        {
+            for (int column = 0; column < statsGrid->columnCount(); column += 2)
+            {
+                if (QLayoutItem *item = statsGrid->itemAtPosition(row, column))
+                {
+                    if (QLabel *label = qobject_cast<QLabel *>(item->widget()))
+                        appendColorStyle(label, scheme->StatLabelColor);
+                }
+            }
+        }
+    }
 
     // Embed CpuGraphArea into the plain container widget from the .ui
     this->m_graphArea = new CpuGraphArea(this->ui->graphAreaContainer);

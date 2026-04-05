@@ -17,7 +17,10 @@
  */
 
 #include "configuration.h"
+#include "colorscheme.h"
 
+#include <QApplication>
+#include <QPalette>
 #include <QSettings>
 #include <QVariantList>
 
@@ -44,6 +47,10 @@ void Configuration::Load()
 
     // General
     this->RefreshRateMs  = s.value("General/RefreshRateMs", this->RefreshRateMs).toInt();
+    this->UseCustomColorScheme = s.value("General/UseCustomColorScheme",
+                                         this->UseCustomColorScheme).toBool();
+    this->CustomColorScheme = s.value("General/CustomColorScheme",
+                                      this->CustomColorScheme).toMap();
 
     // Processes
     this->ShowKernelTasks        = s.value("Processes/ShowKernelTasks",        this->ShowKernelTasks).toBool();
@@ -84,6 +91,14 @@ void Configuration::Load()
     {
         this->PerfGraphWindowSec = 60;
     }
+
+    // Color scheme
+    const bool darkMode = QApplication::palette().color(QPalette::Window).lightness() <= 127;
+    ColorScheme *scheme = darkMode ? ColorScheme::DefaultDark()
+                                   : ColorScheme::DefaultLight();
+    if (this->UseCustomColorScheme)
+        scheme->ApplyVariantMap(this->CustomColorScheme);
+    ColorScheme::Install(scheme);
 }
 
 void Configuration::Save()
@@ -97,6 +112,11 @@ void Configuration::Save()
 
     // General
     s.setValue("General/RefreshRateMs", this->RefreshRateMs);
+    s.setValue("General/UseCustomColorScheme", this->UseCustomColorScheme);
+    s.setValue("General/CustomColorScheme",
+               this->UseCustomColorScheme
+               ? ColorScheme::GetCurrent()->ToVariantMap()
+               : this->CustomColorScheme);
 
     // Processes
     s.setValue("Processes/ShowKernelTasks",     this->ShowKernelTasks);

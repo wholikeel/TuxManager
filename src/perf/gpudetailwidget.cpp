@@ -18,6 +18,7 @@
 
 #include "gpudetailwidget.h"
 #include "configuration.h"
+#include "../colorscheme.h"
 
 #include <algorithm>
 #include <QGridLayout>
@@ -34,19 +35,18 @@ const QVector<double> kEmptyHistory;
 
 GpuDetailWidget::GpuDetailWidget(QWidget *parent) : QWidget(parent)
 {
+    const ColorScheme *scheme = ColorScheme::GetCurrent();
     this->m_selectedEngineBySlot = CFG->GpuEngineSelectorIndices;
     while (this->m_selectedEngineBySlot.size() < 4)
         this->m_selectedEngineBySlot.append(this->m_selectedEngineBySlot.size());
     if (this->m_selectedEngineBySlot.size() > 4)
         this->m_selectedEngineBySlot.resize(4);
 
-    const QColor lineColor = this->palette().color(QPalette::Highlight);
-    QColor fillColor = lineColor;
-    fillColor.setAlpha(110);
-
     auto configureGraph = [&](GraphWidget *graph)
     {
-        graph->SetColor(lineColor, fillColor);
+        graph->SetColor(scheme->GpuGraphLineColor,
+                        scheme->GpuGraphFillColor,
+                        scheme->GpuGraphSecondaryFillColor);
         graph->SetSampleCapacity(HISTORY_SIZE);
         graph->SetGridColumns(6);
         graph->SetGridRows(4);
@@ -155,7 +155,8 @@ GpuDetailWidget::GpuDetailWidget(QWidget *parent) : QWidget(parent)
     auto *copyHeader = new QHBoxLayout();
     copyHeader->addWidget(new QLabel(tr("Copy bandwidth"), this));
     this->m_copyBwLegendLabel = new QLabel(tr("Light: TX  Dark: RX"), this);
-    this->m_copyBwLegendLabel->setStyleSheet("color:#888;");
+    this->m_copyBwLegendLabel->setStyleSheet(
+                QString("color:%1;").arg(scheme->StatLabelColor.name(QColor::HexArgb)));
     this->m_copyBwLegendLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     copyHeader->addWidget(this->m_copyBwLegendLabel, 1);
     this->m_copyBwGraphMaxLabel = new QLabel(tr("0 KB/s"), this);

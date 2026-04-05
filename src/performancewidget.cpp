@@ -20,6 +20,7 @@
 #include "ui_performancewidget.h"
 
 #include "configuration.h"
+#include "colorscheme.h"
 #include "logger.h"
 #include "perf/graphwidget.h"
 
@@ -97,21 +98,23 @@ void PerformanceWidget::setupLayout()
 
 void PerformanceWidget::setupSidePanel()
 {
+    const ColorScheme *scheme = ColorScheme::GetCurrent();
+
     // ── CPU item ─────────────────────────────────────────────────────────────
     auto *cpuItem = new Perf::SidePanelItem(tr("CPU"), this);
-    cpuItem->SetGraphColor(QColor(0x00, 0xbc, 0xff), QColor(0x00, 0x4c, 0x8a, 120));
+    cpuItem->SetGraphColor(scheme->CpuGraphLineColor, scheme->CpuGraphFillColor);
     this->m_cpuPanelIndex = this->m_sidePanel->AddItem(cpuItem);
     this->m_stack->addWidget(this->m_cpuDetail);
 
     // ── Memory item ──────────────────────────────────────────────────────────
     auto *memItem = new Perf::SidePanelItem(tr("Memory"), this);
-    memItem->SetGraphColor(QColor(0xcc, 0x44, 0xcc), QColor(0x66, 0x11, 0x66, 130));
+    memItem->SetGraphColor(scheme->MemoryGraphLineColor, scheme->MemoryGraphFillColor);
     this->m_memoryPanelIndex = this->m_sidePanel->AddItem(memItem);
     this->m_stack->addWidget(this->m_memDetail);
 
     // ── Swap item ────────────────────────────────────────────────────────────
     auto *swapItem = new Perf::SidePanelItem(tr("Swap"), this);
-    swapItem->SetGraphColor(QColor(0xcc, 0x88, 0x44), QColor(0x66, 0x33, 0x11, 120));
+    swapItem->SetGraphColor(scheme->SwapUsageGraphLineColor, scheme->SwapUsageGraphFillColor);
     this->m_swapPanelIndex = this->m_sidePanel->AddItem(swapItem);
     this->m_stack->addWidget(this->m_swapDetail);
 
@@ -125,6 +128,7 @@ void PerformanceWidget::setupSidePanel()
 
 void PerformanceWidget::setupDiskPanels()
 {
+    const ColorScheme *scheme = ColorScheme::GetCurrent();
     this->m_diskPanelStart = this->m_sidePanel->GetCount();
     const int count = this->m_provider->DiskCount();
     for (int i = 0; i < count; ++i)
@@ -133,7 +137,7 @@ void PerformanceWidget::setupDiskPanels()
         this->m_diskNames.append(devName);
 
         auto *item = new Perf::SidePanelItem(tr("Disk (%1)").arg(devName), this);
-        item->SetGraphColor(QColor(0x66, 0xbb, 0x44), QColor(0x33, 0x66, 0x22, 120));
+        item->SetGraphColor(scheme->DiskGraphLineColor, scheme->DiskGraphFillColor);
         this->m_sidePanel->AddItem(item);
         this->m_diskItems.append(item);
 
@@ -147,6 +151,7 @@ void PerformanceWidget::setupDiskPanels()
 
 void PerformanceWidget::setupGpuPanels()
 {
+    const ColorScheme *scheme = ColorScheme::GetCurrent();
     this->m_gpuPanelStart = this->m_sidePanel->GetCount();
     const int count = this->m_provider->GpuCount();
     for (int i = 0; i < count; ++i)
@@ -155,7 +160,7 @@ void PerformanceWidget::setupGpuPanels()
         this->m_gpuNames.append(GpuName);
 
         auto *item = new Perf::SidePanelItem(tr("GPU %1").arg(i), this);
-        item->SetGraphColor(QColor(0x44, 0xa8, 0xff), QColor(0x1e, 0x4d, 0x82, 110));
+        item->SetGraphColor(scheme->GpuGraphLineColor, scheme->GpuGraphFillColor);
         this->m_sidePanel->AddItem(item);
         this->m_gpuItems.append(item);
 
@@ -169,6 +174,7 @@ void PerformanceWidget::setupGpuPanels()
 
 void PerformanceWidget::setupNetworkPanels()
 {
+    const ColorScheme *scheme = ColorScheme::GetCurrent();
     this->m_networkPanelStart = this->m_sidePanel->GetCount();
     const int count = this->m_provider->NetworkCount();
     for (int i = 0; i < count; ++i)
@@ -177,7 +183,7 @@ void PerformanceWidget::setupNetworkPanels()
         this->m_networkNames.append(ifName);
 
         auto *item = new Perf::SidePanelItem(tr("NIC (%1)").arg(ifName), this);
-        item->SetGraphColor(QColor(0xdb, 0x8b, 0x3a), QColor(0x66, 0x3f, 0x1f, 110));
+        item->SetGraphColor(scheme->NetworkGraphLineColor, scheme->NetworkGraphFillColor);
         this->m_sidePanel->AddItem(item);
         this->m_networkItems.append(item);
 
@@ -475,11 +481,11 @@ void PerformanceWidget::applyGraphWindowSeconds()
     {
         const int minutes = sec / 60;
         labelText = (minutes == 1) ? tr("1 minute") : tr("%1 minutes").arg(minutes);
-    }
-    else
+    } else
     {
         labelText = tr("%1 seconds").arg(sec);
     }
+
     for (QLabel *label : this->findChildren<QLabel *>())
     {
         if (label && label->property("perfTimeAxisLabel").toBool())

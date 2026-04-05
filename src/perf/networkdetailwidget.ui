@@ -31,7 +31,7 @@
      <item>
       <widget class="QLabel" name="titleLabel">
        <property name="styleSheet">
-        <string>font-size: 18pt; font-weight: bold; color: #db8b3a;</string>
+        <string>font-size: 18pt; font-weight: bold;</string>
        </property>
        <property name="text">
         <string>Ethernet</string>
@@ -54,7 +54,7 @@
      <item>
       <widget class="QLabel" name="throughputGraphMaxLabel">
        <property name="styleSheet">
-        <string>color:#888; font-size: 8pt;</string>
+        <string>font-size: 8pt;</string>
        </property>
        <property name="text">
         <string>0 KB/s</string>
@@ -69,7 +69,7 @@
    <item>
     <widget class="QLabel" name="throughputLabel">
      <property name="styleSheet">
-      <string>color:#888; font-size: 8pt;</string>
+      <string>font-size: 8pt;</string>
      </property>
      <property name="text">
       <string>Throughput</string>
@@ -84,7 +84,7 @@
      <item>
       <widget class="QLabel" name="timeLeftLabel">
        <property name="styleSheet">
-        <string>color: #666; font-size: 8pt;</string>
+        <string>font-size: 8pt;</string>
        </property>
        <property name="text">
         <string>60 seconds</string>
@@ -107,7 +107,7 @@
      <item>
       <widget class="QLabel" name="timeRightLabel">
        <property name="styleSheet">
-        <string>color: #666; font-size: 8pt;</string>
+        <string>font-size: 8pt;</string>
        </property>
        <property name="text">
         <string>0</string>
@@ -130,7 +130,7 @@
      <item row="0" column="0">
       <widget class="QLabel" name="sendLabel">
        <property name="styleSheet">
-        <string>color:#888;</string>
+        <string></string>
        </property>
        <property name="text">
         <string>Send</string>
@@ -147,7 +147,7 @@
      <item row="0" column="2">
       <widget class="QLabel" name="adapterLabel">
        <property name="styleSheet">
-        <string>color:#888;</string>
+        <string></string>
        </property>
        <property name="text">
         <string>Adapter</string>
@@ -164,7 +164,7 @@
      <item row="1" column="0">
       <widget class="QLabel" name="receiveLabel">
        <property name="styleSheet">
-        <string>color:#888;</string>
+        <string></string>
        </property>
        <property name="text">
         <string>Receive</string>
@@ -181,7 +181,7 @@
      <item row="1" column="2">
       <widget class="QLabel" name="typeLabel">
        <property name="styleSheet">
-        <string>color:#888;</string>
+        <string></string>
        </property>
        <property name="text">
         <string>Connection type</string>
@@ -198,7 +198,7 @@
      <item row="2" column="2">
       <widget class="QLabel" name="speedLabel">
        <property name="styleSheet">
-        <string>color:#888;</string>
+        <string></string>
        </property>
        <property name="text">
         <string>Link speed</string>
@@ -215,7 +215,7 @@
      <item row="3" column="2">
       <widget class="QLabel" name="ipv4Label">
        <property name="styleSheet">
-        <string>color:#888;</string>
+        <string></string>
        </property>
        <property name="text">
         <string>IPv4 address</string>
@@ -232,7 +232,7 @@
      <item row="4" column="2">
       <widget class="QLabel" name="ipv6Label">
        <property name="styleSheet">
-        <string>color:#888;</string>
+        <string></string>
        </property>
        <property name="text">
         <string>IPv6 address</string>

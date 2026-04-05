@@ -17,6 +17,7 @@
  */
 
 #include "swapdetailwidget.h"
+#include "../colorscheme.h"
 
 #include <algorithm>
 #include <QGridLayout>
@@ -25,8 +26,21 @@
 
 using namespace Perf;
 
+namespace
+{
+void appendColorStyle(QWidget *widget, const QColor &color)
+{
+    QString style = widget->styleSheet();
+    if (!style.isEmpty() && !style.trimmed().endsWith(';'))
+        style += ';';
+    style += QString(" color: %1;").arg(color.name(QColor::HexArgb));
+    widget->setStyleSheet(style);
+}
+}
+
 SwapDetailWidget::SwapDetailWidget(QWidget *parent) : QWidget(parent)
 {
+    const ColorScheme *scheme = ColorScheme::GetCurrent();
     auto *root = new QVBoxLayout(this);
     root->setContentsMargins(12, 10, 12, 10);
     root->setSpacing(6);
@@ -37,12 +51,14 @@ SwapDetailWidget::SwapDetailWidget(QWidget *parent) : QWidget(parent)
     titleFont.setPointSize(18);
     titleFont.setBold(true);
     title->setFont(titleFont);
+    appendColorStyle(title, scheme->SwapUsageGraphLineColor);
 
     this->m_totalLabel = new QLabel(tr("0 GB"), this);
     this->m_totalLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
     QFont totalFont = this->m_totalLabel->font();
     totalFont.setPointSize(11);
     this->m_totalLabel->setFont(totalFont);
+    appendColorStyle(this->m_totalLabel, scheme->MutedTextColor);
 
     header->addWidget(title, 1);
     header->addWidget(this->m_totalLabel, 1);
@@ -56,7 +72,8 @@ SwapDetailWidget::SwapDetailWidget(QWidget *parent) : QWidget(parent)
     root->addLayout(usageHeader);
 
     this->m_usageGraph = new GraphWidget(this);
-    this->m_usageGraph->SetColor(QColor(0xcc, 0x88, 0x44), QColor(0x66, 0x33, 0x11, 120));
+    this->m_usageGraph->SetColor(scheme->SwapUsageGraphLineColor,
+                                 scheme->SwapUsageGraphFillColor);
     this->m_usageGraph->SetSampleCapacity(HISTORY_SIZE);
     this->m_usageGraph->SetGridColumns(6);
     this->m_usageGraph->SetGridRows(4);
@@ -79,7 +96,9 @@ SwapDetailWidget::SwapDetailWidget(QWidget *parent) : QWidget(parent)
     root->addLayout(activityHeader);
 
     this->m_activityGraph = new GraphWidget(this);
-    this->m_activityGraph->SetColor(QColor(0xcc, 0xaa, 0x66), QColor(0x66, 0x44, 0x22, 100));
+    this->m_activityGraph->SetColor(scheme->SwapActivityGraphLineColor,
+                                    scheme->SwapActivityGraphFillColor,
+                                    scheme->SwapActivityGraphSecondaryFillColor);
     this->m_activityGraph->SetSampleCapacity(HISTORY_SIZE);
     this->m_activityGraph->SetGridColumns(6);
     this->m_activityGraph->SetGridRows(4);
@@ -104,7 +123,7 @@ SwapDetailWidget::SwapDetailWidget(QWidget *parent) : QWidget(parent)
     auto mk = [this](const QString &txt)
     {
         auto *l = new QLabel(txt, this);
-        l->setStyleSheet("color:#888;");
+        appendColorStyle(l, ColorScheme::GetCurrent()->StatLabelColor);
         return l;
     };
 

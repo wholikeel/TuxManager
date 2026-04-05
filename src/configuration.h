@@ -21,6 +21,7 @@
 
 #include <QByteArray>
 #include <QObject>
+#include <QVariantMap>
 #include <QVector>
 
 // Convenience macro for global config access: CFG->SomeSetting
@@ -46,6 +47,8 @@ class Configuration : public QObject
 
         // ── General ──────────────────────────────────────────────────────────────
         int RefreshRateMs { 1000 };  ///< How often live data is refreshed (ms)
+        bool UseCustomColorScheme { false };
+        QVariantMap CustomColorScheme;
 
         // ── Processes tab ─────────────────────────────────────────────────────────
         bool ShowKernelTasks     { true };  ///< Show kernel threads in the process list

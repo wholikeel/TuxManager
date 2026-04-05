@@ -17,6 +17,7 @@
  */
 
 #include "sidepanelitem.h"
+#include "../colorscheme.h"
 #include "perfdataprovider.h"
 
 #include <QPainter>
@@ -72,25 +73,22 @@ void SidePanelItem::paintEvent(QPaintEvent *event)
     QWidget::paintEvent(event);   // draw children (the graph widget)
 
     QPainter p(this);
-    const QPalette pal = this->palette();
-    const bool darkTheme = pal.color(QPalette::Window).lightness() <= 127;
+    const ColorScheme *scheme = ColorScheme::GetCurrent();
 
     const QRect r = this->rect();
 
     // Background
     QColor bg;
     if (this->m_selected)
-        bg = darkTheme ? QColor(0x1a, 0x4a, 0x8a, 200)
-                       : QColor(pal.color(QPalette::Highlight).red(),
-                                pal.color(QPalette::Highlight).green(),
-                                pal.color(QPalette::Highlight).blue(),
-                                135);
-    else if (this->m_hovered)
-        bg = darkTheme ? QColor(0x30, 0x30, 0x40, 120)
-                       : QColor(0, 0, 0, 20);
-    else
-        bg = darkTheme ? QColor(0x1a, 0x1a, 0x22, 180)
-                       : pal.color(QPalette::Window);
+    {
+        bg = scheme->SidePanelItemSelectedBackgroundColor;
+    } else if (this->m_hovered)
+    {
+        bg = scheme->SidePanelItemHoverBackgroundColor;
+    } else
+    {
+        bg = scheme->SidePanelItemBackgroundColor;
+    }
 
     p.fillRect(r, bg);
 
@@ -118,8 +116,8 @@ void SidePanelItem::paintEvent(QPaintEvent *event)
     const QString titleText = titleFm.elidedText(this->m_title, Qt::ElideRight, titleMaxW);
 
     p.setFont(titleFont);
-    p.setPen(darkTheme ? (this->m_selected ? Qt::white : QColor(0xcc, 0xcc, 0xcc))
-                       : (this->m_selected ? pal.color(QPalette::HighlightedText) : pal.color(QPalette::WindowText)));
+    p.setPen(this->m_selected ? scheme->SidePanelItemSelectedTextColor
+                              : scheme->SidePanelItemTextColor);
     p.drawText(QRect(left, top, titleMaxW, textH),
                Qt::AlignLeft | Qt::AlignVCenter,
                titleText);
@@ -127,7 +125,7 @@ void SidePanelItem::paintEvent(QPaintEvent *event)
     if (!subText.isEmpty())
     {
         p.setFont(subFont);
-        p.setPen(darkTheme ? QColor(0x88, 0xaa, 0xcc) : pal.color(QPalette::Mid));
+        p.setPen(scheme->SidePanelItemSubtitleColor);
         p.drawText(QRect(r.width() - right - subW, top, subW, textH),
                    Qt::AlignRight | Qt::AlignVCenter,
                    subText);
@@ -136,7 +134,7 @@ void SidePanelItem::paintEvent(QPaintEvent *event)
     // Selection border
     if (this->m_selected)
     {
-        p.setPen(QPen(darkTheme ? QColor(0x44, 0x88, 0xff) : pal.color(QPalette::Highlight), 2));
+        p.setPen(QPen(scheme->SidePanelItemSelectedBorderColor, 2));
         p.setBrush(Qt::NoBrush);
         p.drawRect(r.adjusted(1, 1, -1, -1));
     }

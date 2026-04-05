@@ -57,7 +57,7 @@ namespace Perf
             void SetSecondaryHistoryRef(const QVector<double> &data2);
 
             /// Optional: change the line / fill colour pair from the default blue.
-            void SetColor(QColor line, QColor fill);
+            void SetColor(QColor line, QColor fill, QColor fill2 = QColor());
 
             /// Number of horizontal grid divisions.
             void SetGridColumns(int cols) { this->m_gridCols = cols; update(); }
@@ -94,9 +94,9 @@ namespace Perf
             const QVector<double> *m_data2Ref { nullptr };
             double          m_maxVal    { 100.0 };
 
-            QColor          m_lineColor  { 0x00, 0xbc, 0xff };  // bright blue
-            QColor          m_fillColor  { 0x00, 0x4c, 0x8a, 120 };
-            QColor          m_fillColor2 { 0x00, 0x22, 0x55, 160 };  // darker blue for kernel
+            QColor          m_lineColor;
+            QColor          m_fillColor;
+            QColor          m_fillColor2;
 
             int             m_gridCols  { 5 };
             int             m_gridRows  { 4 };

@@ -17,6 +17,7 @@
  */
 
 #include "sidepanel.h"
+#include "../colorscheme.h"
 
 using namespace Perf;
 
@@ -36,11 +37,8 @@ SidePanel::SidePanel(QWidget *parent)
     this->m_scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     this->m_scrollArea->setFrameShape(QFrame::NoFrame);
 
-    // Keep original dark styling in dark mode, adapt to palette in light mode.
     QPalette pal = this->m_container->palette();
-    const QColor window = this->palette().color(QPalette::Window);
-    const bool darkTheme = window.lightness() <= 127;
-    pal.setColor(QPalette::Window, darkTheme ? QColor(0x12, 0x12, 0x1a) : window);
+    pal.setColor(QPalette::Window, ColorScheme::GetCurrent()->SidePanelBackgroundColor);
     this->m_container->setPalette(pal);
     this->m_container->setAutoFillBackground(true);
 

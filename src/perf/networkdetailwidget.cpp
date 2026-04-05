@@ -18,19 +18,57 @@
 
 #include "networkdetailwidget.h"
 #include "ui_networkdetailwidget.h"
+#include "../colorscheme.h"
 
 #include <algorithm>
+#include <QGridLayout>
+#include <QLabel>
 
 using namespace Perf;
+
+namespace
+{
+void appendColorStyle(QWidget *widget, const QColor &color)
+{
+    QString style = widget->styleSheet();
+    if (!style.isEmpty() && !style.trimmed().endsWith(';'))
+        style += ';';
+    style += QString(" color: %1;").arg(color.name(QColor::HexArgb));
+    widget->setStyleSheet(style);
+}
+}
 
 NetworkDetailWidget::NetworkDetailWidget(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::NetworkDetailWidget)
 {
     this->ui->setupUi(this);
+    const ColorScheme *scheme = ColorScheme::GetCurrent();
 
-    this->ui->throughputGraphWidget->SetColor(QColor(0xdb, 0x8b, 0x3a),
-                                              QColor(0x66, 0x3f, 0x1f, 110));
+    appendColorStyle(this->ui->titleLabel, scheme->NetworkTitleColor);
+    appendColorStyle(this->ui->throughputGraphMaxLabel, scheme->StatLabelColor);
+    appendColorStyle(this->ui->throughputLabel, scheme->StatLabelColor);
+    appendColorStyle(this->ui->timeLeftLabel, scheme->AxisLabelColor);
+    appendColorStyle(this->ui->timeRightLabel, scheme->AxisLabelColor);
+
+    if (QGridLayout *statsGrid = this->findChild<QGridLayout *>("statsGrid"))
+    {
+        for (int row = 0; row < statsGrid->rowCount(); ++row)
+        {
+            for (int column = 0; column < statsGrid->columnCount(); column += 2)
+            {
+                if (QLayoutItem *item = statsGrid->itemAtPosition(row, column))
+                {
+                    if (QLabel *label = qobject_cast<QLabel *>(item->widget()))
+                        appendColorStyle(label, scheme->StatLabelColor);
+                }
+            }
+        }
+    }
+
+    this->ui->throughputGraphWidget->SetColor(scheme->NetworkGraphLineColor,
+                                              scheme->NetworkGraphFillColor,
+                                              scheme->NetworkGraphSecondaryFillColor);
     this->ui->throughputGraphWidget->SetSampleCapacity(HISTORY_SIZE);
     this->ui->throughputGraphWidget->SetGridColumns(6);
     this->ui->throughputGraphWidget->SetGridRows(4);
