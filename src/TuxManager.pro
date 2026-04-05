@@ -23,6 +23,8 @@ SOURCES += \
     os/processfilterproxy.cpp \
     os/processhelper.cpp \
     os/service.cpp \
+    os/servicemodel.cpp \
+    os/servicefilterproxy.cpp \
     os/servicehelper.cpp \
     perf/perfdataprovider.cpp \
     perf/graphwidget.cpp \
@@ -50,6 +52,8 @@ HEADERS += \
     os/processfilterproxy.h \
     os/processhelper.h \
     os/service.h \
+    os/servicemodel.h \
+    os/servicefilterproxy.h \
     os/servicehelper.h \
     perf/perfdataprovider.h \
     perf/graphwidget.h \

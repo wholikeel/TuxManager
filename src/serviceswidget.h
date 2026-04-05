@@ -20,6 +20,8 @@
 #define SERVICESWIDGET_H
 
 #include "os/service.h"
+#include "os/servicemodel.h"
+#include "os/servicefilterproxy.h"
 
 #include <QObject>
 #include <QThread>
@@ -63,6 +65,8 @@ class ServicesWidget : public QWidget
 
     private:
         Ui::ServicesWidget *ui;
+        OS::ServiceModel      *m_model { nullptr };
+        OS::ServiceFilterProxy *m_proxy { nullptr };
         QTimer             *m_refreshTimer { nullptr };
         QThread            *m_workerThread { nullptr };
         ServiceRefreshWorker *m_worker { nullptr };
@@ -71,7 +75,6 @@ class ServicesWidget : public QWidget
         bool                m_refreshPending { false };
         quint64             m_refreshToken { 0 };
 
-        void rebuildTable(const QList<OS::Service> &services);
         void startRefresh();
 };
 

@@ -22,9 +22,7 @@
 #include "configuration.h"
 
 #include <QHeaderView>
-#include <QHash>
 #include <QMetaObject>
-#include <QTableWidgetItem>
 
 void ServiceRefreshWorker::fetch(quint64 token)
 {
@@ -41,6 +39,8 @@ void ServiceRefreshWorker::fetch(quint64 token)
 ServicesWidget::ServicesWidget(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::ServicesWidget)
+    , m_model(new OS::ServiceModel(this))
+    , m_proxy(new OS::ServiceFilterProxy(this))
     , m_refreshTimer(new QTimer(this))
     , m_workerThread(new QThread(this))
     , m_worker(new ServiceRefreshWorker())
@@ -49,35 +49,30 @@ ServicesWidget::ServicesWidget(QWidget *parent)
     qRegisterMetaType<OS::Service>("Os::Service");
     qRegisterMetaType<QList<OS::Service>>("QList<Os::Service>");
 
-    this->ui->tableWidget->setColumnCount(5);
-    this->ui->tableWidget->setHorizontalHeaderLabels(
-    {
-        tr("Service"),
-        tr("Load"),
-        tr("Active"),
-        tr("Sub"),
-        tr("Description")
-    });
-    this->ui->tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
-    this->ui->tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    this->ui->tableWidget->setAlternatingRowColors(true);
+    this->m_proxy->setSourceModel(this->m_model);
+    connect(this->ui->searchEdit,
+            &QLineEdit::textChanged,
+            this->m_proxy,
+            &OS::ServiceFilterProxy::setFilterFixedString);
 
-    QHeaderView *hv = this->ui->tableWidget->horizontalHeader();
+    this->ui->tableView->setModel(this->m_proxy);
+    this->ui->tableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+    QHeaderView *hv = this->ui->tableView->horizontalHeader();
     hv->setSectionResizeMode(0, QHeaderView::Interactive);
     hv->setSectionResizeMode(1, QHeaderView::Interactive);
     hv->setSectionResizeMode(2, QHeaderView::Interactive);
     hv->setSectionResizeMode(3, QHeaderView::Interactive);
     hv->setSectionResizeMode(4, QHeaderView::Stretch);
     hv->setMinimumSectionSize(60);
-    this->ui->tableWidget->setColumnWidth(0, 260);
-    this->ui->tableWidget->setColumnWidth(1, 90);
-    this->ui->tableWidget->setColumnWidth(2, 90);
-    this->ui->tableWidget->setColumnWidth(3, 100);
-    this->ui->tableWidget->setSortingEnabled(true);
-    this->ui->tableWidget->sortByColumn(0, Qt::AscendingOrder);
+    this->ui->tableView->setColumnWidth(0, 260);
+    this->ui->tableView->setColumnWidth(1, 90);
+    this->ui->tableView->setColumnWidth(2, 90);
+    this->ui->tableView->setColumnWidth(3, 100);
+    this->ui->tableView->setSortingEnabled(true);
+    this->ui->tableView->sortByColumn(0, Qt::AscendingOrder);
 
-    connect(this->m_refreshTimer, &QTimer::timeout,
-            this, &ServicesWidget::onTimerTick);
+    connect(this->m_refreshTimer, &QTimer::timeout, this, &ServicesWidget::onTimerTick);
 
     this->m_worker->moveToThread(this->m_workerThread);
     connect(this->m_workerThread, &QThread::finished, this->m_worker, &QObject::deleteLater);
@@ -142,21 +137,21 @@ void ServicesWidget::onRefreshFinished(quint64 token, bool systemdAvailable, con
 
     if (!systemdAvailable)
     {
-        this->ui->tableWidget->setVisible(false);
+        this->ui->tableView->setVisible(false);
         this->ui->unavailableLabel->setVisible(true);
         this->ui->unavailableLabel->setText(tr("systemd required (%1)").arg(reason));
         this->ui->statusLabel->setText(tr("Services unavailable"));
     } else if (!error.isEmpty())
     {
-        this->ui->tableWidget->setVisible(false);
+        this->ui->tableView->setVisible(false);
         this->ui->unavailableLabel->setVisible(true);
         this->ui->unavailableLabel->setText(tr("Failed to query services: %1").arg(error));
         this->ui->statusLabel->setText(tr("Services unavailable"));
     } else
     {
         this->ui->unavailableLabel->setVisible(false);
-        this->ui->tableWidget->setVisible(true);
-        this->rebuildTable(services);
+        this->ui->tableView->setVisible(true);
+        this->m_model->SetServices(services);
         this->ui->statusLabel->setText(tr("Services: %1").arg(services.size()));
     }
 
@@ -165,76 +160,4 @@ void ServicesWidget::onRefreshFinished(quint64 token, bool systemdAvailable, con
         this->m_refreshPending = false;
         QMetaObject::invokeMethod(this, &ServicesWidget::startRefresh, Qt::QueuedConnection);
     }
-}
-
-void ServicesWidget::rebuildTable(const QList<OS::Service> &services)
-{
-    auto *table = this->ui->tableWidget;
-    const bool sortingWasEnabled = table->isSortingEnabled();
-    const int sortSection = table->horizontalHeader()->sortIndicatorSection();
-    const Qt::SortOrder sortOrder = table->horizontalHeader()->sortIndicatorOrder();
-
-    table->setUpdatesEnabled(false);
-    table->setSortingEnabled(false);
-
-    QHash<QString, OS::Service> incomingByUnit;
-    incomingByUnit.reserve(services.size());
-    for (const OS::Service &s : services)
-        incomingByUnit.insert(s.unit, s);
-
-    for (int row = table->rowCount() - 1; row >= 0; --row)
-    {
-        QTableWidgetItem *unitItem = table->item(row, 0);
-        if (!unitItem || !incomingByUnit.contains(unitItem->text()))
-            table->removeRow(row);
-    }
-
-    QHash<QString, int> rowByUnit;
-    rowByUnit.reserve(table->rowCount());
-    for (int row = 0; row < table->rowCount(); ++row)
-    {
-        QTableWidgetItem *unitItem = table->item(row, 0);
-        if (unitItem)
-            rowByUnit.insert(unitItem->text(), row);
-    }
-
-    auto ensureItem = [table](int row, int col) -> QTableWidgetItem *
-    {
-        QTableWidgetItem *it = table->item(row, col);
-        if (!it)
-        {
-            it = new QTableWidgetItem();
-            it->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
-            table->setItem(row, col, it);
-        }
-        return it;
-    };
-    auto setTextIfChanged = [&](int row, int col, const QString &text)
-    {
-        QTableWidgetItem *it = ensureItem(row, col);
-        if (it->text() != text)
-            it->setText(text);
-    };
-
-    for (const OS::Service &s : services)
-    {
-        int row = rowByUnit.value(s.unit, -1);
-        if (row < 0)
-        {
-            row = table->rowCount();
-            table->insertRow(row);
-            rowByUnit.insert(s.unit, row);
-        }
-
-        setTextIfChanged(row, 0, s.unit);
-        setTextIfChanged(row, 1, s.loadState);
-        setTextIfChanged(row, 2, s.activeState);
-        setTextIfChanged(row, 3, s.subState);
-        setTextIfChanged(row, 4, s.description);
-    }
-
-    table->setSortingEnabled(sortingWasEnabled);
-    if (sortingWasEnabled && sortSection >= 0)
-        table->sortByColumn(sortSection, sortOrder);
-    table->setUpdatesEnabled(true);
 }
