@@ -145,7 +145,9 @@ bool shouldIgnoreDrmGpu(const QString &driverName, const QString &uevent)
         QStringLiteral("virtio"),
         QStringLiteral("hyperv_drm"),
         QStringLiteral("simpledrm"),
+        QStringLiteral("bochs-drm"),
         QStringLiteral("bochs_drm"),
+        QStringLiteral("bochs"),
         QStringLiteral("qxl")
     };
 
